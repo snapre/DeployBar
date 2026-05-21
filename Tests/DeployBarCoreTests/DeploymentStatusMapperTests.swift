@@ -29,7 +29,7 @@ final class DeploymentStatusMapperTests: XCTestCase {
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .failed), .critical)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .crashed), .critical)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .error), .critical)
-        XCTAssertEqual(DeploymentStatusMapper.severity(for: .canceled), .warning)
+        XCTAssertEqual(DeploymentStatusMapper.severity(for: .canceled), .healthy)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .removed), .warning)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .queued), .pending)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .waiting), .pending)

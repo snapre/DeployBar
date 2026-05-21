@@ -197,15 +197,21 @@ struct DeploymentPopoverView: View {
     private var sectionedSnapshots: [SnapshotGroup] {
         let attention = focusedSnapshots.filter { $0.severity >= .warning }
         let inProgress = focusedSnapshots.filter { $0.severity == .active || $0.severity == .pending }
-        let healthy = focusedSnapshots.filter { $0.severity == .healthy }
-        let visibleHealthy = Array(healthy.prefix(attention.isEmpty && inProgress.isEmpty ? 6 : 2))
+        let recent = focusedSnapshots.filter(isLowEmphasisHistory)
+        let healthy = focusedSnapshots.filter { $0.severity == .healthy && !isLowEmphasisHistory($0) }
+        let visibleHealthy = Array(healthy.prefix(attention.isEmpty && inProgress.isEmpty && recent.isEmpty ? 6 : 2))
         let hiddenHealthyCount = healthy.count - visibleHealthy.count
 
         return [
             SnapshotGroup(title: "Needs attention", snapshots: attention),
             SnapshotGroup(title: "In progress", snapshots: inProgress),
+            SnapshotGroup(title: "Recent", snapshots: recent),
             SnapshotGroup(title: hiddenHealthyCount > 0 ? "Healthy +\(hiddenHealthyCount) hidden" : "Healthy", snapshots: visibleHealthy)
         ].filter { !$0.snapshots.isEmpty }
+    }
+
+    private func isLowEmphasisHistory(_ snapshot: DeploymentSnapshot) -> Bool {
+        !snapshot.isStale && snapshot.status == .canceled
     }
 
     private var issueStrip: some View {

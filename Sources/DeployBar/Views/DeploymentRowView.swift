@@ -131,7 +131,10 @@ struct DeploymentRowView: View {
     }
 
     private var color: Color {
-        DeploymentSeverityStyle.color(for: snapshot.severity)
+        if usesLowEmphasisStatusStyle {
+            return .secondary
+        }
+        return DeploymentSeverityStyle.color(for: snapshot.severity)
     }
 
     private var timeSummary: String {
@@ -181,6 +184,10 @@ struct DeploymentRowView: View {
     }
 
     private var rowBackground: Color {
+        if usesLowEmphasisStatusStyle {
+            return Color(nsColor: .controlBackgroundColor).opacity(0.74)
+        }
+
         switch snapshot.severity {
         case .healthy:
             return Color(nsColor: .controlBackgroundColor).opacity(0.74)
@@ -191,6 +198,10 @@ struct DeploymentRowView: View {
         case .critical:
             return .red.opacity(0.09)
         }
+    }
+
+    private var usesLowEmphasisStatusStyle: Bool {
+        !snapshot.isStale && snapshot.status == .canceled
     }
 }
 
@@ -228,6 +239,9 @@ private struct StatusPill: View {
     }
 
     private var color: Color {
-        DeploymentSeverityStyle.color(for: severity)
+        if !isStale && status == .canceled {
+            return .secondary
+        }
+        return DeploymentSeverityStyle.color(for: severity)
     }
 }

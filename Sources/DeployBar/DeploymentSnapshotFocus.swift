@@ -81,10 +81,10 @@ enum DeploymentSnapshotFocus {
             return 80
         case .failed, .crashed, .error:
             return 70
-        case .canceled:
-            return 60
         case .ready, .success:
             return 50
+        case .canceled:
+            return 40
         case .sleeping:
             return 30
         case .skipped:

@@ -97,15 +97,21 @@ final class MenuBarController {
     private func visibleRowCount(for focusedSnapshots: [DeploymentSnapshot]) -> Int {
         let attention = focusedSnapshots.filter { $0.severity >= .warning }
         let inProgress = focusedSnapshots.filter { $0.severity == .active || $0.severity == .pending }
-        let healthy = focusedSnapshots.filter { $0.severity == .healthy }
-        let visibleHealthy = min(healthy.count, attention.isEmpty && inProgress.isEmpty ? 6 : 2)
-        return attention.count + inProgress.count + visibleHealthy
+        let recent = focusedSnapshots.filter(isLowEmphasisHistory)
+        let healthy = focusedSnapshots.filter { $0.severity == .healthy && !isLowEmphasisHistory($0) }
+        let visibleHealthy = min(healthy.count, attention.isEmpty && inProgress.isEmpty && recent.isEmpty ? 6 : 2)
+        return attention.count + inProgress.count + recent.count + visibleHealthy
     }
 
     private func sectionCount(for focusedSnapshots: [DeploymentSnapshot]) -> Int {
         let attention = focusedSnapshots.contains { $0.severity >= .warning }
         let inProgress = focusedSnapshots.contains { $0.severity == .active || $0.severity == .pending }
-        let healthy = focusedSnapshots.contains { $0.severity == .healthy }
-        return [attention, inProgress, healthy].filter { $0 }.count
+        let recent = focusedSnapshots.contains(where: isLowEmphasisHistory)
+        let healthy = focusedSnapshots.contains { $0.severity == .healthy && !isLowEmphasisHistory($0) }
+        return [attention, inProgress, recent, healthy].filter { $0 }.count
+    }
+
+    private func isLowEmphasisHistory(_ snapshot: DeploymentSnapshot) -> Bool {
+        !snapshot.isStale && snapshot.status == .canceled
     }
 }

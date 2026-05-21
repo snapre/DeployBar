@@ -13,8 +13,10 @@ public enum DeploymentStatusMapper {
         switch status {
         case .failed, .crashed, .error:
             return .critical
-        case .canceled, .removed, .unknown:
+        case .removed, .unknown:
             return .warning
+        case .canceled:
+            return .healthy
         case .queued, .waiting, .initializing:
             return .pending
         case .building, .deploying:
