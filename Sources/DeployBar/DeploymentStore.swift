@@ -51,7 +51,14 @@ final class DeploymentStore: ObservableObject {
         let registry = ProviderRegistry(providers: [
             MockProvider(),
             VercelProvider(),
-            RailwayProvider()
+            RailwayProvider(),
+            NetlifyProvider(),
+            RenderProvider(),
+            CloudflarePagesProvider(),
+            DigitalOceanProvider(),
+            HerokuProvider(),
+            GitHubDeploymentsProvider(),
+            GitLabDeploymentsProvider()
         ])
         self.refreshCoordinator = RefreshCoordinator(registry: registry, tokenStore: tokenStore)
     }

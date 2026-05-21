@@ -274,6 +274,181 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(result.issues.first?.kind, .authentication)
         XCTAssertFalse(result.issues.first?.message.contains("super_secret_token") ?? true)
     }
+
+    func testNetlifyProviderListsSitesWhenNoTargetsConfigured() async throws {
+        let sitesBody = """
+        [
+          { "id": "site_123", "name": "docs" }
+        ]
+        """.data(using: .utf8)!
+        let deploysBody = """
+        [
+          {
+            "id": "deploy_123",
+            "name": "docs",
+            "state": "ready",
+            "created_at": "2026-05-21T10:00:00Z",
+            "updated_at": "2026-05-21T10:01:00Z"
+          }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: sitesBody),
+            HTTPResponse(statusCode: 200, data: deploysBody)
+        ])
+        let provider = NetlifyProvider(client: client, limit: 3, siteLimit: 5)
+        let account = ProviderAccount(provider: .netlify, displayName: "Netlify", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "netlify_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].projectName, "docs")
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer netlify_secret")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/api/v1/sites")
+        XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/api/v1/sites/site_123/deploys")
+    }
+
+    func testCloudflarePagesProviderRequiresAccountID() async {
+        let provider = CloudflarePagesProvider(client: RecordingHTTPClient(responses: []))
+        let account = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.kind, .notConfigured)
+    }
+
+    func testCloudflarePagesProviderListsProjectsWhenNoTargetsConfigured() async throws {
+        let projectsBody = """
+        {
+          "success": true,
+          "result": [
+            { "id": "prj_123", "name": "web", "production_branch": "main" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let deploymentsBody = """
+        {
+          "success": true,
+          "result": [
+            {
+              "id": "pages_dep_123",
+              "project_name": "web",
+              "environment": "production",
+              "created_on": "2026-05-21T10:00:00Z",
+              "latest_stage": { "status": "success", "ended_on": "2026-05-21T10:01:00Z" }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: projectsBody),
+            HTTPResponse(statusCode: 200, data: deploymentsBody)
+        ])
+        let provider = CloudflarePagesProvider(client: client, limit: 2, projectLimit: 5)
+        let account = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token", teamID: "acct_123")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].status, .success)
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer cloudflare_secret")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects")
+        XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects/web/deployments")
+    }
+
+    func testGitHubProviderFetchesLatestDeploymentStatus() async throws {
+        let deploymentsBody = """
+        [
+          {
+            "id": 123,
+            "sha": "abc123",
+            "ref": "main",
+            "task": "deploy",
+            "environment": "production",
+            "description": "Deploy production",
+            "statuses_url": "https://api.github.com/repos/acme/api/deployments/123/statuses",
+            "created_at": "2026-05-21T10:00:00Z",
+            "updated_at": "2026-05-21T10:00:00Z",
+            "creator": { "login": "dev" }
+          }
+        ]
+        """.data(using: .utf8)!
+        let statusesBody = """
+        [
+          {
+            "id": 456,
+            "state": "success",
+            "description": "Deployment passed",
+            "environment_url": "https://api.example.com",
+            "created_at": "2026-05-21T10:01:00Z",
+            "updated_at": "2026-05-21T10:01:00Z",
+            "creator": { "login": "deploy-bot" }
+          }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: deploymentsBody),
+            HTTPResponse(statusCode: 200, data: statusesBody)
+        ])
+        let provider = GitHubDeploymentsProvider(client: client, limit: 4)
+        let account = ProviderAccount(
+            provider: .github,
+            displayName: "GitHub",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "acme/api", environmentName: "production")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "github_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].status, .success)
+        XCTAssertEqual(result.snapshots[0].actor, "deploy-bot")
+        XCTAssertEqual(result.snapshots[0].deploymentURL?.absoluteString, "https://api.example.com")
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer github_secret")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/repos/acme/api/deployments")
+    }
+
+    func testGitLabProviderBuildsAuthenticatedDeploymentRequest() async throws {
+        let body = """
+        [
+          {
+            "id": 123,
+            "ref": "main",
+            "sha": "abc123",
+            "status": "running",
+            "created_at": "2026-05-21T10:00:00Z",
+            "updated_at": "2026-05-21T10:01:00Z",
+            "environment": { "name": "production" }
+          }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = GitLabDeploymentsProvider(client: client, limit: 6)
+        let account = ProviderAccount(
+            provider: .gitlab,
+            displayName: "GitLab",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "acme/api", projectName: "acme/api", environmentName: "production")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "gitlab_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].status, .deploying)
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "PRIVATE-TOKEN"), "gitlab_secret")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.percentEncodedPath, "/api/v4/projects/acme%2Fapi/deployments")
+    }
 }
 
 private final class RecordingHTTPClient: HTTPClient, @unchecked Sendable {

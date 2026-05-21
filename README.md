@@ -17,6 +17,7 @@ This repository currently contains:
 - mock provider with queued/building/ready/failed snapshots
 - Vercel REST provider for deployment listing and project/environment discovery
 - Railway GraphQL provider for deployment listing and read-only discovery of projects, services, and environments
+- Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, GitHub deployments, and GitLab deployments providers
 - refresh scheduling with stale snapshot retention, issue backoff, and faster polling while deployments are live
 - macOS notifications for deployment transitions into ready/success, failed/error/crashed, canceled, or removed states
 - tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
@@ -62,7 +63,7 @@ service: com.deploybar.tokens
 account: <provider>:<token-reference>
 ```
 
-Provider identity, token references, and monitored targets are stored per account so Vercel and Railway credentials stay isolated.
+Provider identity, token references, and monitored targets are stored per account so credentials stay isolated.
 
 ## Provider plan
 
@@ -81,6 +82,48 @@ Data source: Railway Public GraphQL API, `POST https://backboard.railway.com/gra
 Confirmed shape uses Relay-style pagination for `deployments(input:, first:, after:)`. Railway account/workspace tokens use `Authorization: Bearer <token>`, while project tokens use `Project-Access-Token: <token>`. Railway targets require at least a service ID and environment ID.
 
 DeployBar can discover Railway resources from Settings. Account/workspace tokens can fill projects, services, and environments. Project tokens can reliably reveal project/environment scope via `projectToken`; service discovery may still require manual service ID entry depending on token permissions.
+
+### Netlify
+
+Data source: official Netlify REST API, `GET https://api.netlify.com/api/v1/sites` and `GET /api/v1/sites/{site_id}/deploys`.
+
+When no target is configured, DeployBar lists accessible sites and polls recent deploys for each site. Optional targets can narrow by site, context, or branch.
+
+### Render
+
+Data source: official Render REST API, `GET https://api.render.com/v1/services` and `GET /v1/services/{service_id}/deploys`.
+
+When no target is configured, DeployBar lists accessible services and polls recent deploys for each service. Optional targets can narrow by service.
+
+### Cloudflare Pages
+
+Data source: Cloudflare API v4, `GET /client/v4/accounts/{account_id}/pages/projects` and `GET /pages/projects/{project_name}/deployments`.
+
+Cloudflare Pages requires the account ID in addition to the API token. When no target is configured, DeployBar lists Pages projects for that account and polls recent deployments for each project.
+
+### DigitalOcean App Platform
+
+Data source: DigitalOcean Apps API, `GET https://api.digitalocean.com/v2/apps` and `GET /v2/apps/{app_id}/deployments`.
+
+When no target is configured, DeployBar lists accessible apps and polls recent deployments for each app.
+
+### Heroku
+
+Data source: Heroku Platform API, `GET https://api.heroku.com/apps` and `GET /apps/{app}/releases`.
+
+Heroku releases are mapped as deployments. Note that releases can include config/add-on changes, not only code deploys.
+
+### GitHub Deployments
+
+Data source: GitHub REST API, `GET /repos/{owner}/{repo}/deployments` plus latest deployment status from `statuses_url`.
+
+GitHub requires at least one repository target, such as `owner/repo`, because there is no account-wide deployments list.
+
+### GitLab Deployments
+
+Data source: GitLab REST API, `GET /projects/{id}/deployments`.
+
+GitLab requires at least one project target. Use a numeric project ID for the most reliable API path; an optional API base URL can be set for self-managed GitLab instances.
 
 ## Extending providers
 

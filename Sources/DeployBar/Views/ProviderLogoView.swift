@@ -42,6 +42,34 @@ struct ProviderLogoView: View {
             Image(systemName: "tram.fill")
                 .font(.system(size: size * 0.58, weight: .semibold))
                 .foregroundStyle(foregroundColor)
+        case .netlify:
+            Image(systemName: "sparkles")
+                .font(.system(size: size * 0.58, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .render:
+            Image(systemName: "rectangle.3.group.fill")
+                .font(.system(size: size * 0.56, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .cloudflarePages:
+            Image(systemName: "cloud.fill")
+                .font(.system(size: size * 0.58, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .digitalOcean:
+            Image(systemName: "drop.fill")
+                .font(.system(size: size * 0.58, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .heroku:
+            Image(systemName: "h.square.fill")
+                .font(.system(size: size * 0.58, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .github:
+            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                .font(.system(size: size * 0.52, weight: .semibold))
+                .foregroundStyle(foregroundColor)
+        case .gitlab:
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: size * 0.56, weight: .semibold))
+                .foregroundStyle(foregroundColor)
         }
     }
 
@@ -53,6 +81,20 @@ struct ProviderLogoView: View {
             return colorScheme == .dark ? .white.opacity(0.12) : .black.opacity(0.08)
         case .railway:
             return .indigo.opacity(0.14)
+        case .netlify:
+            return .teal.opacity(0.14)
+        case .render:
+            return .cyan.opacity(0.14)
+        case .cloudflarePages:
+            return .orange.opacity(0.16)
+        case .digitalOcean:
+            return .blue.opacity(0.14)
+        case .heroku:
+            return .purple.opacity(0.14)
+        case .github:
+            return colorScheme == .dark ? .white.opacity(0.12) : .black.opacity(0.08)
+        case .gitlab:
+            return .pink.opacity(0.14)
         }
     }
 
@@ -64,6 +106,20 @@ struct ProviderLogoView: View {
             return .primary
         case .railway:
             return .indigo
+        case .netlify:
+            return .teal
+        case .render:
+            return .cyan
+        case .cloudflarePages:
+            return .orange
+        case .digitalOcean:
+            return .blue
+        case .heroku:
+            return .purple
+        case .github:
+            return .primary
+        case .gitlab:
+            return .pink
         }
     }
 }

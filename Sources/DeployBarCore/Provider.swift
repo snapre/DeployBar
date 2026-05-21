@@ -77,33 +77,177 @@ public struct MonitoredTarget: Identifiable, Codable, Equatable, Sendable {
     }
 
     public func displayName(for provider: ProviderID) -> String {
-        switch provider {
-        case .mock:
-            return "Mock target"
-        case .vercel:
-            let project = projectName ?? projectID ?? "All projects"
-            let environment = environmentName ?? "All environments"
-            return [project, environment, branch].compactMap { $0 }.joined(separator: " / ")
-        case .railway:
-            let project = projectName ?? projectID ?? "Project"
-            let service = serviceName ?? serviceID ?? "Service"
-            let environment = environmentName ?? environmentID ?? "Environment"
-            return [project, service, environment].joined(separator: " / ")
-        }
+        displayName(using: provider.targetBehavior)
     }
 
     public func matchesScope(of other: MonitoredTarget, for provider: ProviderID) -> Bool {
-        switch provider {
+        matchesScope(of: other, using: provider.targetBehavior)
+    }
+
+    public func displayName(using behavior: ProviderTargetBehavior) -> String {
+        let parts = behavior.displayFields.map { displayValue(for: $0, fallback: behavior.fallbackName(for: $0)) }
+        let display = parts.compactMap { $0.nilIfBlank }.joined(separator: " / ")
+        return display.isEmpty ? behavior.emptyTargetName : display
+    }
+
+    public func matchesScope(of other: MonitoredTarget, using behavior: ProviderTargetBehavior) -> Bool {
+        guard !behavior.matchFields.isEmpty else { return true }
+        return behavior.matchFields.allSatisfy { field in
+            switch field {
+            case .project:
+                sameResource(projectID, projectName, other.projectID, other.projectName)
+            case .service:
+                sameResource(serviceID, serviceName, other.serviceID, other.serviceName)
+            case .environment:
+                sameResource(environmentID, environmentName, other.environmentID, other.environmentName)
+            case .branch:
+                sameText(branch, other.branch)
+            }
+        }
+    }
+
+    public func satisfiesRequiredFields(for provider: ProviderID) -> Bool {
+        satisfiesRequiredFields(using: provider.targetBehavior)
+    }
+
+    public func satisfiesRequiredFields(using behavior: ProviderTargetBehavior) -> Bool {
+        behavior.requiredFields.allSatisfy { value(for: $0) != nil }
+    }
+
+    public var hasAnyScopeValue: Bool {
+        projectID.nilIfBlank != nil ||
+            projectName.nilIfBlank != nil ||
+            serviceID.nilIfBlank != nil ||
+            serviceName.nilIfBlank != nil ||
+            environmentID.nilIfBlank != nil ||
+            environmentName.nilIfBlank != nil ||
+            branch.nilIfBlank != nil
+    }
+
+    private func value(for field: ProviderTargetField) -> String? {
+        switch field {
+        case .project:
+            return projectID.nilIfBlank ?? projectName.nilIfBlank
+        case .service:
+            return serviceID.nilIfBlank ?? serviceName.nilIfBlank
+        case .environment:
+            return environmentID.nilIfBlank ?? environmentName.nilIfBlank
+        case .branch:
+            return branch.nilIfBlank
+        }
+    }
+
+    private func displayValue(for field: ProviderTargetField, fallback: String) -> String {
+        value(for: field) ?? fallback
+    }
+}
+
+public enum ProviderTargetField: String, Codable, CaseIterable, Sendable {
+    case project
+    case service
+    case environment
+    case branch
+}
+
+public struct ProviderTargetBehavior: Equatable, Sendable {
+    public var displayFields: [ProviderTargetField]
+    public var matchFields: [ProviderTargetField]
+    public var requiredFields: [ProviderTargetField]
+    public var emptyTargetName: String
+    public var fallbackNames: [ProviderTargetField: String]
+
+    public init(
+        displayFields: [ProviderTargetField],
+        matchFields: [ProviderTargetField],
+        requiredFields: [ProviderTargetField] = [],
+        emptyTargetName: String,
+        fallbackNames: [ProviderTargetField: String] = [:]
+    ) {
+        self.displayFields = displayFields
+        self.matchFields = matchFields
+        self.requiredFields = requiredFields
+        self.emptyTargetName = emptyTargetName
+        self.fallbackNames = fallbackNames
+    }
+
+    public func fallbackName(for field: ProviderTargetField) -> String {
+        fallbackNames[field] ?? field.defaultDisplayName
+    }
+}
+
+public extension ProviderTargetField {
+    var defaultDisplayName: String {
+        switch self {
+        case .project: "Project"
+        case .service: "Service"
+        case .environment: "Environment"
+        case .branch: "Branch"
+        }
+    }
+}
+
+public extension ProviderID {
+    var targetBehavior: ProviderTargetBehavior {
+        switch self {
         case .mock:
-            return true
+            ProviderTargetBehavior(displayFields: [], matchFields: [], emptyTargetName: "Mock target")
         case .vercel:
-            return sameResource(projectID, projectName, other.projectID, other.projectName)
-                && sameText(environmentName, other.environmentName)
-                && sameText(branch, other.branch)
+            ProviderTargetBehavior(
+                displayFields: [.project, .environment, .branch],
+                matchFields: [.project, .environment, .branch],
+                emptyTargetName: "All latest deployments",
+                fallbackNames: [.project: "All projects", .environment: "All environments", .branch: "All branches"]
+            )
         case .railway:
-            return sameResource(projectID, projectName, other.projectID, other.projectName)
-                && sameResource(serviceID, serviceName, other.serviceID, other.serviceName)
-                && sameResource(environmentID, environmentName, other.environmentID, other.environmentName)
+            ProviderTargetBehavior(
+                displayFields: [.project, .service, .environment],
+                matchFields: [.project, .service, .environment],
+                requiredFields: [.service, .environment],
+                emptyTargetName: "Railway target"
+            )
+        case .netlify:
+            ProviderTargetBehavior(
+                displayFields: [.project, .environment, .branch],
+                matchFields: [.project, .environment, .branch],
+                emptyTargetName: "All Netlify sites",
+                fallbackNames: [.project: "All sites", .environment: "All contexts", .branch: "All branches"]
+            )
+        case .render:
+            ProviderTargetBehavior(
+                displayFields: [.service, .environment, .branch],
+                matchFields: [.service, .environment, .branch],
+                emptyTargetName: "All Render services",
+                fallbackNames: [.service: "All services", .environment: "All environments", .branch: "All branches"]
+            )
+        case .cloudflarePages:
+            ProviderTargetBehavior(
+                displayFields: [.project, .environment, .branch],
+                matchFields: [.project, .environment, .branch],
+                emptyTargetName: "All Pages projects",
+                fallbackNames: [.project: "All projects", .environment: "All environments", .branch: "All branches"]
+            )
+        case .digitalOcean:
+            ProviderTargetBehavior(
+                displayFields: [.project, .service, .environment],
+                matchFields: [.project, .service, .environment],
+                emptyTargetName: "All apps",
+                fallbackNames: [.project: "All apps", .service: "All components", .environment: "All phases"]
+            )
+        case .heroku:
+            ProviderTargetBehavior(
+                displayFields: [.project],
+                matchFields: [.project],
+                emptyTargetName: "All Heroku apps",
+                fallbackNames: [.project: "All apps"]
+            )
+        case .github, .gitlab:
+            ProviderTargetBehavior(
+                displayFields: [.project, .environment],
+                matchFields: [.project, .environment],
+                requiredFields: [.project],
+                emptyTargetName: "Repository deployments",
+                fallbackNames: [.project: "Repository", .environment: "All environments"]
+            )
         }
     }
 }
@@ -129,6 +273,21 @@ private func normalized(_ value: String?) -> String? {
     let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
     guard let trimmed, !trimmed.isEmpty else { return nil }
     return trimmed.lowercased()
+}
+
+private extension String? {
+    var nilIfBlank: String? {
+        let trimmed = self?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 public struct ProviderContext: Sendable {

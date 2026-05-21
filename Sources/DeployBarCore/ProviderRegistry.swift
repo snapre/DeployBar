@@ -14,11 +14,11 @@ public struct ProviderRegistry: Sendable {
     }
 
     public var allProviders: [any DeploymentProvider] {
-        ProviderID.allCases.compactMap { providers[$0] }
+        Self.providerOrder.compactMap { providers[$0] }
     }
 
     public var allDescriptors: [ProviderDescriptor] {
-        ProviderID.allCases.compactMap { descriptors[$0] }
+        Self.providerOrder.compactMap { descriptors[$0] }
     }
 
     public func descriptor(for id: ProviderID) -> ProviderDescriptor? {
@@ -54,6 +54,89 @@ public struct ProviderRegistry: Sendable {
             supportsMonitoredTargets: true,
             requiresMonitoredTargets: true,
             dashboardURL: URL(string: "https://railway.com/dashboard")
+        ),
+        ProviderDescriptor(
+            id: .netlify,
+            displayName: "Netlify",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://app.netlify.com")
+        ),
+        ProviderDescriptor(
+            id: .render,
+            displayName: "Render",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://dashboard.render.com")
+        ),
+        ProviderDescriptor(
+            id: .cloudflarePages,
+            displayName: "Cloudflare Pages",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: true,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://dash.cloudflare.com")
+        ),
+        ProviderDescriptor(
+            id: .digitalOcean,
+            displayName: "DigitalOcean",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://cloud.digitalocean.com/apps")
+        ),
+        ProviderDescriptor(
+            id: .heroku,
+            displayName: "Heroku",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://dashboard.heroku.com/apps")
+        ),
+        ProviderDescriptor(
+            id: .github,
+            displayName: "GitHub",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: true,
+            dashboardURL: URL(string: "https://github.com")
+        ),
+        ProviderDescriptor(
+            id: .gitlab,
+            displayName: "GitLab",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: true,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: true,
+            dashboardURL: URL(string: "https://gitlab.com")
         )
+    ]
+
+    private static let providerOrder: [ProviderID] = [
+        .mock,
+        .vercel,
+        .railway,
+        .netlify,
+        .render,
+        .cloudflarePages,
+        .digitalOcean,
+        .heroku,
+        .github,
+        .gitlab
     ]
 }

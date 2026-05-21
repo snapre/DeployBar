@@ -46,4 +46,15 @@ final class MonitoredTargetTests: XCTestCase {
         XCTAssertFalse(mainProduction.matchesScope(of: allBranchesProduction, for: .vercel))
         XCTAssertTrue(mainProduction.matchesScope(of: sameByIDAndName, for: .vercel))
     }
+
+    func testGenericProviderTargetBehavior() {
+        let repository = MonitoredTarget(projectID: "acme/api", environmentName: "production")
+        let sameRepository = MonitoredTarget(projectName: "ACME/API", environmentName: "Production")
+        let emptyTarget = MonitoredTarget()
+
+        XCTAssertTrue(repository.matchesScope(of: sameRepository, for: .github))
+        XCTAssertTrue(repository.satisfiesRequiredFields(for: .github))
+        XCTAssertFalse(emptyTarget.satisfiesRequiredFields(for: .github))
+        XCTAssertEqual(MonitoredTarget(projectName: "docs").displayName(for: .netlify), "docs / All contexts / All branches")
+    }
 }

@@ -72,7 +72,7 @@ struct ProviderSettingsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("No provider accounts")
                         .font(.subheadline.weight(.semibold))
-                    Text("Connect Vercel or Railway below.")
+                    Text("Connect a deployment provider below.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -144,18 +144,18 @@ private struct ProviderAccountBlock: View {
             if isExpanded {
                 Divider()
 
-                if account.provider == .vercel, !account.monitoredTargets.isEmpty {
+                if canAutoWatchAll, !account.monitoredTargets.isEmpty {
                     Button {
                         store.clearTargets(from: account.id)
                     } label: {
-                        Label("Auto watch all projects", systemImage: "sparkles")
+                        Label("Auto watch latest deployments", systemImage: "sparkles")
                     }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                 }
 
                 if account.monitoredTargets.isEmpty {
-                    Text(account.provider == .vercel ? "Watching latest deployments." : "No target configured.")
+                    Text(canAutoWatchAll ? "Watching latest deployments." : "No target configured.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -197,6 +197,10 @@ private struct ProviderAccountBlock: View {
             return "\(account.provider.displayName) · \(kind.displayName) · \(targets)"
         }
         return "\(account.provider.displayName) · \(targets)"
+    }
+
+    private var canAutoWatchAll: Bool {
+        account.provider.targetBehavior.requiredFields.isEmpty
     }
 
     private var enabledBinding: Binding<Bool> {
@@ -273,6 +277,8 @@ private struct AddMonitoredTargetInline: View {
                     } else if provider == .vercel {
                         vercelDiscoveryHeader
                         vercelTargetFields
+                    } else {
+                        genericTargetFields
                     }
 
                     HStack {
@@ -454,6 +460,32 @@ private struct AddMonitoredTargetInline: View {
         }
     }
 
+    @ViewBuilder
+    private var genericTargetFields: some View {
+        let labels = targetInputLabels
+        if provider.targetBehavior.displayFields.contains(.project) {
+            HStack(spacing: 8) {
+                TextField(labels.projectID, text: $projectID)
+                TextField(labels.projectName, text: $projectName)
+            }
+        }
+        if provider.targetBehavior.displayFields.contains(.service) {
+            HStack(spacing: 8) {
+                TextField(labels.serviceID, text: $serviceID)
+                TextField(labels.serviceName, text: $serviceName)
+            }
+        }
+        if provider.targetBehavior.displayFields.contains(.environment) {
+            HStack(spacing: 8) {
+                TextField(labels.environmentID, text: $environmentID)
+                TextField(labels.environmentName, text: $environmentName)
+            }
+        }
+        if provider.targetBehavior.displayFields.contains(.branch) {
+            TextField(labels.branch, text: $branch)
+        }
+    }
+
     private var target: MonitoredTarget {
         MonitoredTarget(
             projectID: projectID.nilIfEmpty,
@@ -467,14 +499,9 @@ private struct AddMonitoredTargetInline: View {
     }
 
     private var canAdd: Bool {
-        let hasRequiredFields = switch provider {
-        case .mock:
-            false
-        case .vercel:
-            projectID.nilIfEmpty != nil || projectName.nilIfEmpty != nil || environmentName.nilIfEmpty != nil || branch.nilIfEmpty != nil
-        case .railway:
-            serviceID.nilIfEmpty != nil && environmentID.nilIfEmpty != nil
-        }
+        let behavior = provider.targetBehavior
+        let hasRequiredFields = !behavior.displayFields.isEmpty &&
+            (behavior.requiredFields.isEmpty ? target.hasAnyScopeValue : target.satisfiesRequiredFields(using: behavior))
         return hasRequiredFields && !isDuplicateTarget
     }
 
@@ -604,6 +631,10 @@ private struct AddMonitoredTargetInline: View {
         account.monitoredTargets.contains { $0.matchesScope(of: candidate, for: provider) }
     }
 
+    private var targetInputLabels: TargetInputLabels {
+        TargetInputLabels(provider: provider)
+    }
+
     private func discoverVercelResources() async {
         isDiscoveringVercel = true
         let result = await store.discoverVercelResources(for: account)
@@ -696,6 +727,51 @@ private extension Array where Element == String {
         var seen = Set<String>()
         return filter { value in
             seen.insert(value).inserted
+        }
+    }
+}
+
+struct TargetInputLabels {
+    var projectID = "Project ID"
+    var projectName = "Project name"
+    var serviceID = "Service ID"
+    var serviceName = "Service name"
+    var environmentID = "Environment ID"
+    var environmentName = "Environment name"
+    var branch = "Branch"
+
+    init(provider: ProviderID) {
+        switch provider {
+        case .mock, .vercel, .railway:
+            break
+        case .netlify:
+            projectID = "Site ID"
+            projectName = "Site name"
+            environmentName = "Context"
+        case .render:
+            serviceID = "Service ID"
+            serviceName = "Service name"
+            environmentName = "Service type"
+        case .cloudflarePages:
+            projectID = "Project ID"
+            projectName = "Project name"
+        case .digitalOcean:
+            projectID = "App ID"
+            projectName = "App name"
+            serviceID = "Component ID"
+            serviceName = "Component name"
+            environmentName = "Phase"
+        case .heroku:
+            projectID = "App ID"
+            projectName = "App name"
+        case .github:
+            projectID = "Repository"
+            projectName = "Repository label"
+            environmentName = "Environment"
+        case .gitlab:
+            projectID = "Project ID"
+            projectName = "Project path"
+            environmentName = "Environment"
         }
     }
 }

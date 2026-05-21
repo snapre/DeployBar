@@ -4,6 +4,13 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case mock
     case vercel
     case railway
+    case netlify
+    case render
+    case cloudflarePages
+    case digitalOcean
+    case heroku
+    case github
+    case gitlab
 
     public var id: String { rawValue }
 
@@ -12,6 +19,13 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .mock: "Mock"
         case .vercel: "Vercel"
         case .railway: "Railway"
+        case .netlify: "Netlify"
+        case .render: "Render"
+        case .cloudflarePages: "Cloudflare Pages"
+        case .digitalOcean: "DigitalOcean"
+        case .heroku: "Heroku"
+        case .github: "GitHub"
+        case .gitlab: "GitLab"
         }
     }
 }

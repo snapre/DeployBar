@@ -41,4 +41,35 @@ final class DeploymentStatusMapperTests: XCTestCase {
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .success, isStale: true, failureKind: .network), .warning)
         XCTAssertEqual(DeploymentStatusMapper.severity(for: .success, isStale: true, failureKind: .authentication), .critical)
     }
+
+    func testAdditionalProviderStatusMappings() {
+        XCTAssertEqual(DeploymentStatusMapper.netlifyStatus("ready"), .ready)
+        XCTAssertEqual(DeploymentStatusMapper.netlifyStatus("building"), .building)
+        XCTAssertEqual(DeploymentStatusMapper.netlifyStatus("error"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.renderStatus("build_in_progress"), .building)
+        XCTAssertEqual(DeploymentStatusMapper.renderStatus("update_in_progress"), .deploying)
+        XCTAssertEqual(DeploymentStatusMapper.renderStatus("live"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.renderStatus("build_failed"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.cloudflarePagesStatus("success"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflarePagesStatus("active"), .building)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflarePagesStatus("failure"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("ACTIVE"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("BUILDING"), .building)
+        XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("ERROR"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.herokuStatus("succeeded"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.herokuStatus("pending"), .deploying)
+        XCTAssertEqual(DeploymentStatusMapper.herokuStatus("failed"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("in_progress"), .deploying)
+        XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("success"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("failure"), .failed)
+
+        XCTAssertEqual(DeploymentStatusMapper.gitlabDeploymentStatus("running"), .deploying)
+        XCTAssertEqual(DeploymentStatusMapper.gitlabDeploymentStatus("success"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.gitlabDeploymentStatus("failed"), .failed)
+    }
 }
