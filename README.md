@@ -1,8 +1,15 @@
 # DeployBar
 
-DeployBar is a local-first macOS menu bar app for watching cloud deployment status across providers such as Vercel and Railway.
+DeployBar is a free, open-source, local-first macOS menu bar app for watching cloud deployment status across providers such as Vercel and Railway.
 
 The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration. There is no Electron shell and no backend service.
+
+## Trust model
+
+- Free and open source under the [MIT License](LICENSE).
+- Local-first by design: no DeployBar backend service and no hosted credential sync.
+- Provider tokens are stored in macOS Keychain, not JSON settings, logs, or diagnostics.
+- See [PRIVACY.md](PRIVACY.md) for data handling and [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Current state
 
