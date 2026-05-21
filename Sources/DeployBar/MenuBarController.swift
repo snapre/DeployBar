@@ -64,17 +64,15 @@ final class MenuBarController {
         let visibleHeight = screen?.visibleFrame.height ?? 650
         let maxHeight = floor(visibleHeight)
         let contentHeight = estimatedPopoverContentHeight()
-        return NSSize(width: DeploymentPopoverView.preferredWidth, height: min(maxHeight, contentHeight))
+        return NSSize(width: DeploymentPopoverLayout.preferredWidth, height: min(maxHeight, contentHeight))
     }
 
     private func estimatedPopoverContentHeight() -> CGFloat {
         let focusedSnapshots = DeploymentSnapshotFocus.focused(store.snapshots)
-        let footerHeight: CGFloat = 142
-        let headerHeight: CGFloat = 65
-        let issueHeight: CGFloat = store.issues.isEmpty ? 0 : 54
+        let issueHeight: CGFloat = store.issues.isEmpty ? 0 : DeploymentPopoverLayout.issueStripHeight
 
         guard !store.snapshots.isEmpty else {
-            return headerHeight + 260 + issueHeight + footerHeight
+            return DeploymentPopoverLayout.emptyHeight + issueHeight
         }
 
         let sectionCount = CGFloat(sectionCount(for: focusedSnapshots))
@@ -84,16 +82,16 @@ final class MenuBarController {
         let sectionTitleHeight: CGFloat = sectionCount * 28
         let rowHeight: CGFloat = rowCount * 106
         let scrollSpacing: CGFloat = sectionCount > 0 ? max(0, sectionCount - 1) * 6 : 0
-        let estimated = headerHeight
+        let estimated = DeploymentPopoverLayout.headerHeight
             + scrollPadding
             + summaryHeight
             + sectionTitleHeight
             + rowHeight
             + scrollSpacing
             + issueHeight
-            + footerHeight
+            + DeploymentPopoverLayout.footerHeight
 
-        return max(420, estimated)
+        return max(DeploymentPopoverLayout.listMinimumHeight, estimated)
     }
 
     private func visibleRowCount(for focusedSnapshots: [DeploymentSnapshot]) -> Int {

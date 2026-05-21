@@ -6,24 +6,28 @@ The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for
 
 ## Current state
 
-This repository currently contains the first scaffold:
+This repository currently contains:
 
 - menu bar app shell with no Dock icon when packaged as an app bundle
+- custom status/menu bar glyph and packaged app icon
 - SwiftUI popover showing provider-agnostic deployment snapshots
-- settings UI for refresh cadence, mock data, and provider token entry
+- settings UI with Providers, Diagnostics, and About tabs for refresh cadence, mock data, provider token entry, discovery, and monitored targets
 - Keychain token wrapper using service `com.deploybar.tokens`
 - local JSON settings store for non-secret settings
 - mock provider with queued/building/ready/failed snapshots
-- Vercel REST provider for deployment listing
-- Railway GraphQL provider for deployment listing
-- Railway read-only discovery for projects, services, and environments
-- tests for status mapping, response parsing, provider requests, redaction, and stale refresh behavior
+- Vercel REST provider for deployment listing and project/environment discovery
+- Railway GraphQL provider for deployment listing and read-only discovery of projects, services, and environments
+- refresh scheduling with stale snapshot retention, issue backoff, and faster polling while deployments are live
+- macOS notifications for deployment transitions into ready/success, failed/error/crashed, canceled, or removed states
+- tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
 
-The next implementation phase is richer account discovery, provider diagnostics, and optional failure log tailing.
+The next implementation phase is deeper provider diagnostics, optional failure log tailing, and polish around account/resource discovery.
 
 ## Development
 
 Build and test:
+
+The package targets macOS 14+ and uses Swift 6.
 
 ```bash
 swift build
@@ -36,7 +40,7 @@ Run directly from SwiftPM:
 swift run DeployBar
 ```
 
-Package a local `.app` bundle with `LSUIElement` enabled:
+Package a local `.app` bundle with `LSUIElement` and the DeployBar icon enabled:
 
 ```bash
 ./Scripts/package_app.sh
@@ -68,6 +72,8 @@ Data source: official Vercel REST API, `GET https://api.vercel.com/v6/deployment
 
 Confirmed parameters include `teamId`, `slug`, `projectId`, `target`, `branch`, `sha`, `state`, and pagination fields. DeployBar maps `QUEUED`, `INITIALIZING`, `BUILDING`, `READY`, `ERROR`, and `CANCELED` into the unified status model.
 
+DeployBar can discover Vercel projects from Settings and uses recent deployment hints to populate common environments and branches.
+
 ### Railway
 
 Data source: Railway Public GraphQL API, `POST https://backboard.railway.com/graphql/v2`.
@@ -88,7 +94,7 @@ Additions should stay provider-local:
 
 ## Privacy
 
-DeployBar is local-first. Tokens are never written to JSON settings, logs, or diagnostic UI. Debug text should pass through redaction before display. The app does not request Full Disk Access, Accessibility, or Screen Recording.
+DeployBar is local-first. Tokens are never written to JSON settings, logs, or diagnostic UI. Debug text should pass through redaction before display. The app may request notification permission for deployment status alerts, but does not request Full Disk Access, Accessibility, or Screen Recording.
 
 ## Attribution
 

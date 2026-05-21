@@ -8,12 +8,16 @@ swift build -c debug --product DeployBar
 
 APP_DIR="$ROOT_DIR/.build/DeployBar.app"
 EXECUTABLE="$ROOT_DIR/.build/debug/DeployBar"
+ICON_FILE="$ROOT_DIR/Sources/DeployBar/Resources/DeployBar.icns"
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 cp "$EXECUTABLE" "$APP_DIR/Contents/MacOS/DeployBar"
+if [[ -f "$ICON_FILE" ]]; then
+  cp "$ICON_FILE" "$APP_DIR/Contents/Resources/DeployBar.icns"
+fi
 
 cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -26,6 +30,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
   <string>com.deploybar.app</string>
   <key>CFBundleName</key>
   <string>DeployBar</string>
+  <key>CFBundleIconFile</key>
+  <string>DeployBar.icns</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

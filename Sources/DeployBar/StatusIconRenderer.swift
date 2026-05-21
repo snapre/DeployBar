@@ -15,29 +15,35 @@ enum StatusIconRenderer {
         NSColor.clear.setFill()
         NSBezierPath(rect: NSRect(origin: .zero, size: size)).fill()
 
-        let baseColor = DeploymentSeverityStyle.nsColor(for: severity)
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 5, y: 0, width: 18, height: 18)).fill()
 
-        let alpha = severity == .warning && !isRefreshing ? 0.82 : 1
-        let color = baseColor.withAlphaComponent(alpha)
-        color.setStroke()
-        color.setFill()
+        let glyph = NSBezierPath()
+        glyph.lineWidth = 2
+        glyph.lineCapStyle = .round
+        glyph.lineJoinStyle = .round
+        glyph.move(to: NSPoint(x: 8.7, y: 7))
+        glyph.line(to: NSPoint(x: 11, y: 10.5))
+        glyph.line(to: NSPoint(x: 13.3, y: 7))
+        glyph.line(to: NSPoint(x: 16, y: 11))
+        glyph.line(to: NSPoint(x: 19.3, y: 11))
 
-        let line = NSBezierPath()
-        line.lineWidth = 2.2
-        line.lineCapStyle = .round
-        line.move(to: NSPoint(x: 5, y: 5))
-        line.line(to: NSPoint(x: 10, y: 13))
-        line.line(to: NSPoint(x: 15, y: 5))
-        line.line(to: NSPoint(x: 23, y: 13))
-        line.stroke()
-
-        if severity >= .warning {
-            let indicatorRect = NSRect(x: 20, y: 2, width: 6, height: 6)
-            NSBezierPath(ovalIn: indicatorRect).fill()
-        } else if isRefreshing || severity == .active {
-            let indicatorRect = NSRect(x: 21, y: 3, width: 4, height: 4)
-            NSBezierPath(ovalIn: indicatorRect).fill()
+        if let context = NSGraphicsContext.current {
+            context.compositingOperation = .clear
+            glyph.stroke()
+            context.compositingOperation = .sourceOver
+        } else {
+            NSColor.clear.setStroke()
+            glyph.stroke()
         }
+
+        let baseColor = DeploymentSeverityStyle.nsColor(for: severity)
+        let alpha = severity == .warning && !isRefreshing ? 0.82 : 1
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 17, y: 2, width: 7, height: 7)).fill()
+
+        baseColor.withAlphaComponent(alpha).setFill()
+        NSBezierPath(ovalIn: NSRect(x: 18, y: 3, width: 5, height: 5)).fill()
 
         return image
     }

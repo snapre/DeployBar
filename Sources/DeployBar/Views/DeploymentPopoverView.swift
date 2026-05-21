@@ -2,8 +2,17 @@ import AppKit
 import DeployBarCore
 import SwiftUI
 
-struct DeploymentPopoverView: View {
+enum DeploymentPopoverLayout {
     static let preferredWidth: CGFloat = 420
+    static let listMinimumHeight: CGFloat = 520
+    static let emptyHeight: CGFloat = 456
+    static let headerHeight: CGFloat = 65
+    static let footerHeight: CGFloat = 143
+    static let issueStripHeight: CGFloat = 54
+}
+
+struct DeploymentPopoverView: View {
+    static let preferredWidth: CGFloat = DeploymentPopoverLayout.preferredWidth
 
     @ObservedObject var store: DeploymentStore
     @Environment(\.openURL) private var openURL
@@ -20,6 +29,7 @@ struct DeploymentPopoverView: View {
                     onOpenSettings: { openSettings() },
                     onRefresh: { store.refresh(manual: true) }
                 )
+                .layoutPriority(1)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
@@ -33,6 +43,7 @@ struct DeploymentPopoverView: View {
                     }
                     .padding(12)
                 }
+                .layoutPriority(1)
             }
 
             if !store.issues.isEmpty {
@@ -43,14 +54,19 @@ struct DeploymentPopoverView: View {
             footerActions
         }
         .frame(width: Self.preferredWidth)
-        .frame(minHeight: 520)
+        .frame(
+            minHeight: store.snapshots.isEmpty ? DeploymentPopoverLayout.emptyHeight : DeploymentPopoverLayout.listMinimumHeight,
+            maxHeight: .infinity,
+            alignment: .top
+        )
     }
 
     private var header: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(DeploymentSeverityStyle.color(for: store.globalSeverity))
-                .frame(width: 9, height: 9)
+            AppLogoView(
+                size: 28,
+                statusColor: DeploymentSeverityStyle.color(for: store.globalSeverity)
+            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("DeployBar")
@@ -63,33 +79,38 @@ struct DeploymentPopoverView: View {
             Spacer()
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
     }
 
     private var footerActions: some View {
         VStack(spacing: 0) {
             Divider()
-            FooterActionRow(
-                title: store.isRefreshing ? "Refreshing..." : "Refresh",
-                systemImage: store.isRefreshing ? "arrow.triangle.2.circlepath.circle" : "arrow.clockwise",
-                shortcut: "⌘R",
-                accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity),
-                isDisabled: store.isRefreshing
-            ) {
-                store.refresh(manual: true)
+            VStack(spacing: 0) {
+                FooterActionRow(
+                    title: store.isRefreshing ? "Refreshing..." : "Refresh",
+                    systemImage: store.isRefreshing ? "arrow.triangle.2.circlepath.circle" : "arrow.clockwise",
+                    shortcut: "⌘R",
+                    accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity),
+                    isDisabled: store.isRefreshing
+                ) {
+                    store.refresh(manual: true)
+                }
+                FooterActionRow(title: "Settings...", systemImage: "gearshape", shortcut: "⌘,", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
+                    openSettings()
+                }
+                FooterActionRow(title: "About DeployBar", systemImage: "info.circle", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
+                    UserDefaults.standard.set(SettingsTab.about.rawValue, forKey: SettingsTab.storageKey)
+                    NSApp.activate(ignoringOtherApps: true)
+                    openSettings()
+                }
+                FooterActionRow(title: "Quit", systemImage: "power", shortcut: "⌘Q", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
+                    NSApp.terminate(nil)
+                }
             }
-            FooterActionRow(title: "Settings...", systemImage: "gearshape", shortcut: "⌘,", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                openSettings()
-            }
-            FooterActionRow(title: "About DeployBar", systemImage: "info.circle", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.orderFrontStandardAboutPanel(nil)
-            }
-            FooterActionRow(title: "Quit", systemImage: "power", shortcut: "⌘Q", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                NSApp.terminate(nil)
-            }
+            .padding(.top, 8)
+            .padding(.bottom, 6)
         }
-        .padding(.vertical, 6)
     }
 
     private var focusSummary: some View {
@@ -367,6 +388,7 @@ private struct PopoverEmptyState: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
     }
 }
