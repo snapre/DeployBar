@@ -1,3 +1,4 @@
+import AppKit
 import DeployBarCore
 import SwiftUI
 
@@ -28,16 +29,30 @@ struct ProviderLogoView: View {
 
     @ViewBuilder
     private var logo: some View {
+        if let assetName = provider.logoAssetName,
+           let image = ProviderLogoAssets.image(named: assetName)
+        {
+            Image(nsImage: image)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(foregroundColor)
+        } else {
+            fallbackLogo
+        }
+    }
+
+    @ViewBuilder
+    private var fallbackLogo: some View {
         switch provider {
         case .mock:
             Image(systemName: "square.grid.2x2")
                 .font(.system(size: size * 0.58, weight: .semibold))
                 .foregroundStyle(foregroundColor)
         case .vercel:
-            VercelTriangle()
-                .fill(foregroundColor)
-                .aspectRatio(1.05, contentMode: .fit)
-                .padding(size * 0.08)
+            Image(systemName: "triangle.fill")
+                .font(.system(size: size * 0.58, weight: .semibold))
+                .foregroundStyle(foregroundColor)
         case .railway:
             Image(systemName: "tram.fill")
                 .font(.system(size: size * 0.58, weight: .semibold))
@@ -78,23 +93,23 @@ struct ProviderLogoView: View {
         case .mock:
             return .secondary.opacity(0.12)
         case .vercel:
-            return colorScheme == .dark ? .white.opacity(0.12) : .black.opacity(0.08)
+            return .black
         case .railway:
-            return .indigo.opacity(0.14)
+            return .black
         case .netlify:
-            return .teal.opacity(0.14)
+            return Color(red: 0.00, green: 0.68, blue: 0.62)
         case .render:
-            return .cyan.opacity(0.14)
+            return Color(red: 0.27, green: 0.89, blue: 0.72)
         case .cloudflarePages:
-            return .orange.opacity(0.16)
+            return Color(red: 0.95, green: 0.50, blue: 0.13)
         case .digitalOcean:
-            return .blue.opacity(0.14)
+            return Color(red: 0.00, green: 0.50, blue: 1.00)
         case .heroku:
-            return .purple.opacity(0.14)
+            return Color(red: 0.26, green: 0.00, blue: 0.60)
         case .github:
-            return colorScheme == .dark ? .white.opacity(0.12) : .black.opacity(0.08)
+            return colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : .black
         case .gitlab:
-            return .pink.opacity(0.14)
+            return Color(red: 0.99, green: 0.43, blue: 0.15)
         }
     }
 
@@ -102,36 +117,65 @@ struct ProviderLogoView: View {
         switch provider {
         case .mock:
             return .secondary
-        case .vercel:
-            return .primary
-        case .railway:
-            return .indigo
-        case .netlify:
-            return .teal
-        case .render:
-            return .cyan
-        case .cloudflarePages:
-            return .orange
-        case .digitalOcean:
-            return .blue
-        case .heroku:
-            return .purple
+        case .vercel, .railway, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .gitlab:
+            return .white
         case .github:
-            return .primary
-        case .gitlab:
-            return .pink
+            return colorScheme == .dark ? .primary : .white
         }
     }
 }
 
-private struct VercelTriangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
+@MainActor
+private enum ProviderLogoAssets {
+    private static let cache = NSCache<NSString, NSImage>()
+
+    static func image(named name: String) -> NSImage? {
+        let key = name as NSString
+        if let cached = cache.object(forKey: key) {
+            return cached
+        }
+
+        guard let url = Bundle.module.url(forResource: name, withExtension: "svg")
+            ?? Bundle.module.url(
+                forResource: name,
+                withExtension: "svg",
+                subdirectory: "ProviderLogos"
+            ),
+            let image = NSImage(contentsOf: url)
+        else {
+            return nil
+        }
+
+        image.isTemplate = true
+        cache.setObject(image, forKey: key)
+        return image
+    }
+}
+
+private extension ProviderID {
+    var logoAssetName: String? {
+        switch self {
+        case .mock:
+            return nil
+        case .vercel:
+            return "vercel"
+        case .railway:
+            return "railway"
+        case .netlify:
+            return "netlify"
+        case .render:
+            return "render"
+        case .cloudflarePages:
+            return "cloudflare-pages"
+        case .digitalOcean:
+            return "digital-ocean"
+        case .heroku:
+            return "heroku"
+        case .github:
+            return "github"
+        case .gitlab:
+            return "gitlab"
+        }
     }
 }
 

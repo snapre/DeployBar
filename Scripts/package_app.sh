@@ -9,6 +9,7 @@ swift build -c debug --product DeployBar
 APP_DIR="$ROOT_DIR/.build/DeployBar.app"
 EXECUTABLE="$ROOT_DIR/.build/debug/DeployBar"
 ICON_FILE="$ROOT_DIR/Sources/DeployBar/Resources/DeployBar.icns"
+RESOURCE_BUNDLE="$ROOT_DIR/.build/debug/DeployBar_DeployBar.bundle"
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
@@ -17,6 +18,9 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cp "$EXECUTABLE" "$APP_DIR/Contents/MacOS/DeployBar"
 if [[ -f "$ICON_FILE" ]]; then
   cp "$ICON_FILE" "$APP_DIR/Contents/Resources/DeployBar.icns"
+fi
+if [[ -d "$RESOURCE_BUNDLE" ]]; then
+  cp -R "$RESOURCE_BUNDLE" "$APP_DIR/DeployBar_DeployBar.bundle"
 fi
 
 cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'

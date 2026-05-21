@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="DeployBar is a local-first macOS menu bar app for watching cloud deployment status across Vercel, Railway, Netlify, Render, Cloudflare Pages, GitHub, GitLab, and more."
+    >
+    <meta name="theme-color" content="#f5f7f0">
+    <title>DeployBar - deployment status in your menu bar</title>
+    <link rel="icon" href="assets/deploybar-icon.png">
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f5f7f0;
+        --paper-strong: #ffffff;
+        --ink: #111814;
+        --muted: #5d665f;
+        --line: #d9ded5;
+        --line-strong: #bac5bc;
+        --green: #118a57;
+        --blue: #256ec6;
+        --cyan: #0b8093;
+        --amber: #c06b1a;
+        --red: #bd3a34;
+        --shadow: 0 22px 70px rgba(22, 31, 26, 0.14);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          linear-gradient(rgba(17, 24, 20, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(17, 24, 20, 0.045) 1px, transparent 1px),
+          var(--paper);
+        background-size: 48px 48px;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .site-shell {
+        width: min(1160px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid rgba(17, 24, 20, 0.09);
+        background: rgba(245, 247, 240, 0.86);
+        backdrop-filter: blur(18px);
+      }
+
+      .nav {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Iowan Old Style", Georgia, serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+
+      .brand img {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(17, 24, 20, 0.18);
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-links a {
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        font-weight: 650;
+      }
+
+      .nav-links a:hover,
+      .nav-links a:focus-visible {
+        border-color: var(--line-strong);
+        color: var(--ink);
+        outline: none;
+      }
+
+      .hero {
+        min-height: 78vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
+        align-items: center;
+        gap: 64px;
+        padding: 70px 0 44px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 22px;
+        color: var(--green);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 41px;
+        height: 9px;
+        border-radius: 999px;
+        background:
+          radial-gradient(circle at 4.5px 50%, currentColor 0 4.5px, transparent 4.8px),
+          radial-gradient(circle at 20.5px 50%, var(--blue) 0 4.5px, transparent 4.8px),
+          radial-gradient(circle at 36.5px 50%, var(--amber) 0 4.5px, transparent 4.8px);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 22px;
+        font-family: "Iowan Old Style", Georgia, serif;
+        font-size: 4.6rem;
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 650px;
+        margin-bottom: 30px;
+        color: #38423b;
+        font-size: 1.22rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        border: 1px solid var(--ink);
+        border-radius: 8px;
+        padding: 0 18px;
+        font-weight: 800;
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      }
+
+      .button.primary {
+        color: #fff;
+        background: var(--ink);
+        box-shadow: 0 16px 36px rgba(17, 24, 20, 0.2);
+      }
+
+      .button.secondary {
+        background: rgba(255, 255, 255, 0.55);
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      .install-line {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.62);
+        color: #28312b;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        overflow: hidden;
+      }
+
+      .install-line span {
+        flex: none;
+        padding: 12px 14px;
+        border-right: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 800;
+      }
+
+      .install-line code {
+        min-width: 0;
+        padding: 12px 14px;
+        overflow-x: auto;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.88rem;
+        white-space: nowrap;
+      }
+
+      .meta {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+
+      .product-visual {
+        justify-self: end;
+        width: min(100%, 480px);
+      }
+
+      .mac-strip {
+        width: 100%;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 11px;
+        border: 1px solid rgba(17, 24, 20, 0.18);
+        border-bottom: 0;
+        border-radius: 8px 8px 0 0;
+        padding: 0 16px;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: 0 18px 52px rgba(17, 24, 20, 0.1);
+      }
+
+      .strip-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--line-strong);
+      }
+
+      .strip-status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .strip-status::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+
+      .popover {
+        border: 1px solid rgba(17, 24, 20, 0.18);
+        border-radius: 0 0 8px 8px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .popover-header,
+      .popover-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+      }
+
+      .popover-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+      }
+
+      .popover-title img {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+      }
+
+      .timestamp,
+      .row-meta,
+      .popover-footer {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .summary-band {
+        margin: 0 14px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background:
+          linear-gradient(90deg, rgba(17, 138, 87, 0.13), rgba(37, 110, 198, 0.1)),
+          #fff;
+      }
+
+      .summary-band strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1.12rem;
+      }
+
+      .counters {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+
+      .counter {
+        border: 1px solid rgba(17, 24, 20, 0.1);
+        border-radius: 8px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .counter b {
+        display: block;
+        font-size: 1rem;
+      }
+
+      .counter span {
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .deployments {
+        display: grid;
+        gap: 9px;
+        padding: 0 14px 14px;
+      }
+
+      .deployment-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 11px 12px;
+        background: #fff;
+      }
+
+      .status-light {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .status-light.ready {
+        background: var(--green);
+      }
+
+      .status-light.building {
+        background: var(--blue);
+      }
+
+      .status-light.failed {
+        background: var(--red);
+      }
+
+      .row-name {
+        display: block;
+        font-weight: 800;
+      }
+
+      .provider-pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 8px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .popover-footer {
+        border-top: 1px solid var(--line);
+      }
+
+      section {
+        padding: 72px 0;
+      }
+
+      .section-heading {
+        max-width: 740px;
+        margin-bottom: 28px;
+      }
+
+      h2 {
+        margin-bottom: 12px;
+        font-family: "Iowan Old Style", Georgia, serif;
+        font-size: 2.45rem;
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .section-heading p {
+        color: var(--muted);
+        font-size: 1.04rem;
+      }
+
+      .provider-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .provider {
+        min-height: 116px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+      }
+
+      .provider-heading {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin-bottom: 7px;
+      }
+
+      .provider-icon-frame {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        flex: none;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .provider-icon {
+        width: 21px;
+        height: 21px;
+        display: block;
+        background: var(--brand, var(--ink));
+        mask: var(--icon) center / contain no-repeat;
+        -webkit-mask: var(--icon) center / contain no-repeat;
+      }
+
+      .provider strong {
+        font-size: 1.08rem;
+      }
+
+      .provider-description {
+        display: block;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .feature-band {
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.46);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature {
+        border-left: 3px solid var(--green);
+        padding: 4px 0 4px 16px;
+      }
+
+      .feature:nth-child(2) {
+        border-color: var(--blue);
+      }
+
+      .feature:nth-child(3) {
+        border-color: var(--amber);
+      }
+
+      .feature:nth-child(4) {
+        border-color: var(--cyan);
+      }
+
+      .feature h3 {
+        margin-bottom: 7px;
+        font-size: 1rem;
+      }
+
+      .feature p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .build-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .command-box {
+        border: 1px solid #1b261f;
+        border-radius: 8px;
+        background: #111814;
+        color: #e8efe9;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      .command-box header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 12px 14px;
+      }
+
+      .command-box header span {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #ff6f61;
+      }
+
+      .command-box header span:nth-child(2) {
+        background: #f8c14a;
+      }
+
+      .command-box header span:nth-child(3) {
+        background: #58c472;
+      }
+
+      pre {
+        margin: 0;
+        padding: 18px;
+        overflow-x: auto;
+      }
+
+      code {
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+
+      .privacy-list {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .privacy-list li {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--line);
+        padding: 30px 0 44px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .site-footer .site-shell {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 14px;
+      }
+
+      .footer-links a {
+        font-weight: 800;
+      }
+
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 38px;
+          padding-top: 44px;
+        }
+
+        .product-visual {
+          justify-self: stretch;
+          width: 100%;
+        }
+
+        h1 {
+          font-size: 3.4rem;
+        }
+
+        .provider-grid,
+        .feature-grid,
+        .build-panel {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .site-shell {
+          width: min(100% - 24px, 1160px);
+        }
+
+        .nav {
+          min-height: auto;
+          padding: 14px 0;
+          align-items: flex-start;
+        }
+
+        .nav-links {
+          justify-content: flex-end;
+          flex-wrap: wrap;
+        }
+
+        .nav-links a {
+          padding: 7px 9px;
+          font-size: 0.84rem;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-bottom: 34px;
+        }
+
+        h1 {
+          font-size: 2.85rem;
+        }
+
+        h2 {
+          font-size: 2rem;
+        }
+
+        .lead {
+          font-size: 1.05rem;
+        }
+
+        .install-line {
+          display: grid;
+          width: 100%;
+        }
+
+        .install-line span {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .counters {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .deployment-row {
+          grid-template-columns: auto 1fr;
+        }
+
+        .deployment-row .provider-pill {
+          grid-column: 2;
+          width: fit-content;
+        }
+
+        section {
+          padding: 52px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <nav class="site-shell nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="DeployBar home">
+          <img src="assets/deploybar-icon.png" alt="">
+          <span>DeployBar</span>
+        </a>
+        <div class="nav-links">
+          <a href="#providers">Providers</a>
+          <a href="#features">Features</a>
+          <a href="#build">Build</a>
+          <a href="https://github.com/snapre/DeployBar">Source</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="site-shell hero" aria-labelledby="hero-title">
+        <div>
+          <div class="eyebrow">Local-first macOS deployment watch</div>
+          <h1 id="hero-title">DeployBar</h1>
+          <p class="lead">
+            A native menu bar app for watching cloud deployment status across the providers your projects already use. Keep builds, failures, stale snapshots, and release notifications in one small macOS surface.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#build">Build from source</a>
+            <a class="button secondary" href="https://github.com/snapre/DeployBar">View source</a>
+          </div>
+          <div class="install-line" aria-label="Build command">
+            <span>Build</span>
+            <code>swift build &amp;&amp; swift run DeployBar</code>
+          </div>
+          <p class="meta">Free and open source &middot; macOS 14+ &middot; Swift 6 &middot; no backend service</p>
+        </div>
+
+        <div class="product-visual" aria-label="DeployBar menu bar preview">
+          <div class="mac-strip">
+            <span class="strip-dot"></span>
+            <span class="strip-dot"></span>
+            <span class="strip-status">All clear</span>
+          </div>
+          <div class="popover">
+            <div class="popover-header">
+              <div class="popover-title">
+                <img src="assets/deploybar-icon.png" alt="">
+                <span>DeployBar</span>
+              </div>
+              <span class="timestamp">Updated 09:41</span>
+            </div>
+            <div class="summary-band">
+              <strong>2 deploying, 1 needs attention</strong>
+              <div class="counters">
+                <div class="counter"><b>2</b><span>Active</span></div>
+                <div class="counter"><b>0</b><span>Waiting</span></div>
+                <div class="counter"><b>1</b><span>Attention</span></div>
+                <div class="counter"><b>0</b><span>Issues</span></div>
+              </div>
+            </div>
+            <div class="deployments">
+              <div class="deployment-row">
+                <span class="status-light building"></span>
+                <span>
+                  <span class="row-name">dashboard-web</span>
+                  <span class="row-meta">production from main</span>
+                </span>
+                <span class="provider-pill">Vercel</span>
+              </div>
+              <div class="deployment-row">
+                <span class="status-light ready"></span>
+                <span>
+                  <span class="row-name">api-service</span>
+                  <span class="row-meta">ready 3 minutes ago</span>
+                </span>
+                <span class="provider-pill">Railway</span>
+              </div>
+              <div class="deployment-row">
+                <span class="status-light failed"></span>
+                <span>
+                  <span class="row-name">docs-site</span>
+                  <span class="row-meta">build failed on staging</span>
+                </span>
+                <span class="provider-pill">GitHub</span>
+              </div>
+            </div>
+            <div class="popover-footer">
+              <span>Refresh</span>
+              <span>Settings</span>
+              <span>Quit</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="providers" class="site-shell" aria-labelledby="providers-title">
+        <div class="section-heading">
+          <h2 id="providers-title">Deployment providers, one menu bar.</h2>
+          <p>
+            DeployBar keeps provider-specific polling and discovery behind a unified status model, so each service can show the same clean snapshot in the popover.
+          </p>
+        </div>
+        <div class="provider-grid">
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #111814; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/vercel.svg');" aria-hidden="true"></span></span>
+              <strong>Vercel</strong>
+            </div>
+            <span class="provider-description">Project, branch, environment, team, and recent deployment discovery.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #0b0d0e; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/railway.svg');" aria-hidden="true"></span></span>
+              <strong>Railway</strong>
+            </div>
+            <span class="provider-description">GraphQL-backed deployment polling for projects, services, and environments.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #00ad9f; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/netlify.svg');" aria-hidden="true"></span></span>
+              <strong>Netlify</strong>
+            </div>
+            <span class="provider-description">Site deploys with optional context and branch filtering.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #13b887; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/render.svg');" aria-hidden="true"></span></span>
+              <strong>Render</strong>
+            </div>
+            <span class="provider-description">Service deployment status from the Render REST API.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #f38020; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/cloudflarepages.svg');" aria-hidden="true"></span></span>
+              <strong>Cloudflare Pages</strong>
+            </div>
+            <span class="provider-description">Pages projects and deployments by account and project name.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #0080ff; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/digitalocean.svg');" aria-hidden="true"></span></span>
+              <strong>DigitalOcean</strong>
+            </div>
+            <span class="provider-description">App Platform deployments across accessible apps.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #430098; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/heroku.svg');" aria-hidden="true"></span></span>
+              <strong>Heroku</strong>
+            </div>
+            <span class="provider-description">Release activity mapped into the same deployment timeline.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #181717; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/github.svg');" aria-hidden="true"></span></span>
+              <strong>GitHub</strong>
+            </div>
+            <span class="provider-description">Repository deployments plus the latest status from each deployment.</span>
+          </div>
+          <div class="provider">
+            <div class="provider-heading">
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #fc6d26; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/gitlab.svg');" aria-hidden="true"></span></span>
+              <strong>GitLab</strong>
+            </div>
+            <span class="provider-description">Project deployments for GitLab.com and self-managed instances.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="feature-band" aria-labelledby="features-title">
+        <div class="site-shell">
+          <div class="section-heading">
+            <h2 id="features-title">Built for quiet deployment awareness.</h2>
+            <p>
+              The app favors local state, provider-level isolation, and a compact native interface that stays useful during repeated deploy cycles.
+            </p>
+          </div>
+          <div class="feature-grid">
+            <div class="feature">
+              <h3>Focused snapshots</h3>
+              <p>Active, waiting, failed, and healthy deployments roll up into one readable status.</p>
+            </div>
+            <div class="feature">
+              <h3>Native notifications</h3>
+              <p>macOS alerts fire when deployments become ready, fail, cancel, or disappear.</p>
+            </div>
+            <div class="feature">
+              <h3>Credential isolation</h3>
+              <p>Provider tokens stay in Keychain while non-secret settings remain local JSON.</p>
+            </div>
+            <div class="feature">
+              <h3>Provider diagnostics</h3>
+              <p>Refresh issues, stale data, and authentication failures surface without leaking secrets.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="build" class="site-shell" aria-labelledby="build-title">
+        <div class="build-panel">
+          <div>
+            <div class="section-heading">
+              <h2 id="build-title">Build it from source.</h2>
+              <p>
+                DeployBar is a Swift Package with a native SwiftUI and AppKit shell. No Electron runtime, no backend account, and no hosted credential sync.
+              </p>
+            </div>
+            <ul class="privacy-list" aria-label="Privacy and permissions">
+              <li>Tokens are stored only in Keychain under the DeployBar token service.</li>
+              <li>Settings are kept under Application Support as local JSON.</li>
+              <li>The app requests notification permission, not Full Disk Access, Accessibility, or Screen Recording.</li>
+            </ul>
+          </div>
+          <div class="command-box" aria-label="Terminal commands">
+            <header aria-hidden="true"><span></span><span></span><span></span></header>
+            <pre><code>git clone https://github.com/snapre/DeployBar.git
+cd DeployBar
+swift test
+./Scripts/package_app.sh
+open .build/DeployBar.app</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-shell">
+        <span>DeployBar is inspired by the product shape and provider architecture ideas in CodexBar. Provider logos via Simple Icons; trademarks belong to their owners.</span>
+        <div class="footer-links">
+          <a href="https://github.com/snapre/DeployBar">GitHub</a>
+          <a href="https://github.com/steipete/CodexBar">CodexBar</a>
+          <a href="https://github.com/simple-icons/simple-icons">Simple Icons</a>
+          <a href="https://github.com/snapre/DeployBar/blob/main/README.md">Docs</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
