@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="system">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,9 +10,20 @@
     <meta name="theme-color" content="#f5f7f0">
     <title>DeployBar - deployment status in your menu bar</title>
     <link rel="icon" href="assets/deploybar-icon.png">
+    <script>
+      (() => {
+        try {
+          const savedTheme = window.localStorage.getItem("deploybar-theme");
+          if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") {
+            document.documentElement.dataset.theme = savedTheme;
+          }
+        } catch {
+        }
+      })();
+    </script>
     <style>
       :root {
-        color-scheme: light;
+        color-scheme: light dark;
         --paper: #f5f7f0;
         --paper-strong: #ffffff;
         --ink: #111814;
@@ -24,8 +35,116 @@
         --cyan: #0b8093;
         --amber: #c06b1a;
         --red: #bd3a34;
+        --grid-line: rgba(17, 24, 20, 0.045);
+        --topbar-bg: rgba(245, 247, 240, 0.86);
+        --topbar-line: rgba(17, 24, 20, 0.09);
+        --surface: rgba(255, 255, 255, 0.76);
+        --surface-soft: rgba(255, 255, 255, 0.55);
+        --surface-strong: rgba(255, 255, 255, 0.92);
+        --surface-solid: #ffffff;
+        --lead: #38423b;
+        --code-ink: #28312b;
+        --button-primary-ink: #ffffff;
+        --menu-border: rgba(17, 24, 20, 0.18);
+        --summary-bg: linear-gradient(90deg, rgba(17, 138, 87, 0.13), rgba(37, 110, 198, 0.1)), #ffffff;
+        --feature-bg: rgba(255, 255, 255, 0.46);
+        --terminal-bg: #111814;
+        --terminal-ink: #e8efe9;
+        --terminal-border: #1b261f;
+        --focus-ring: rgba(37, 110, 198, 0.38);
+        --status-pulse: rgba(37, 110, 198, 0.26);
+        --app-icon-filter: none;
+        --brand-vercel: #111814;
+        --brand-railway: #0b0d0e;
+        --brand-netlify: #00ad9f;
+        --brand-render: #13b887;
+        --brand-cloudflare: #f38020;
+        --brand-digitalocean: #0080ff;
+        --brand-heroku: #430098;
+        --brand-github: #181717;
+        --brand-gitlab: #fc6d26;
         --shadow: 0 22px 70px rgba(22, 31, 26, 0.14);
         --radius: 8px;
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --paper: #0b0f0d;
+        --paper-strong: #121915;
+        --ink: #edf4ee;
+        --muted: #a4afa7;
+        --line: #26322b;
+        --line-strong: #435147;
+        --green: #4fd39c;
+        --blue: #7eb2ff;
+        --cyan: #59cedb;
+        --amber: #f2b760;
+        --red: #ff756d;
+        --grid-line: rgba(237, 244, 238, 0.052);
+        --topbar-bg: rgba(11, 15, 13, 0.82);
+        --topbar-line: rgba(237, 244, 238, 0.1);
+        --surface: rgba(18, 25, 21, 0.74);
+        --surface-soft: rgba(21, 30, 25, 0.62);
+        --surface-strong: rgba(18, 25, 21, 0.94);
+        --surface-solid: #121915;
+        --lead: #c9d3cc;
+        --code-ink: #d9e5dc;
+        --button-primary-ink: #08110d;
+        --menu-border: rgba(237, 244, 238, 0.16);
+        --summary-bg: linear-gradient(90deg, rgba(79, 211, 156, 0.18), rgba(126, 178, 255, 0.13)), #121915;
+        --feature-bg: rgba(18, 25, 21, 0.58);
+        --terminal-bg: #050806;
+        --terminal-ink: #e8f4eb;
+        --terminal-border: #26322b;
+        --focus-ring: rgba(126, 178, 255, 0.42);
+        --status-pulse: rgba(126, 178, 255, 0.24);
+        --app-icon-filter: invert(1);
+        --brand-vercel: #f4faf6;
+        --brand-railway: #eef6f0;
+        --brand-heroku: #a978ff;
+        --brand-github: #f1f7f2;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root[data-theme="system"] {
+          color-scheme: dark;
+          --paper: #0b0f0d;
+          --paper-strong: #121915;
+          --ink: #edf4ee;
+          --muted: #a4afa7;
+          --line: #26322b;
+          --line-strong: #435147;
+          --green: #4fd39c;
+          --blue: #7eb2ff;
+          --cyan: #59cedb;
+          --amber: #f2b760;
+          --red: #ff756d;
+          --grid-line: rgba(237, 244, 238, 0.052);
+          --topbar-bg: rgba(11, 15, 13, 0.82);
+          --topbar-line: rgba(237, 244, 238, 0.1);
+          --surface: rgba(18, 25, 21, 0.74);
+          --surface-soft: rgba(21, 30, 25, 0.62);
+          --surface-strong: rgba(18, 25, 21, 0.94);
+          --surface-solid: #121915;
+          --lead: #c9d3cc;
+          --code-ink: #d9e5dc;
+          --button-primary-ink: #08110d;
+          --menu-border: rgba(237, 244, 238, 0.16);
+          --summary-bg: linear-gradient(90deg, rgba(79, 211, 156, 0.18), rgba(126, 178, 255, 0.13)), #121915;
+          --feature-bg: rgba(18, 25, 21, 0.58);
+          --terminal-bg: #050806;
+          --terminal-ink: #e8f4eb;
+          --terminal-border: #26322b;
+          --focus-ring: rgba(126, 178, 255, 0.42);
+          --status-pulse: rgba(126, 178, 255, 0.24);
+          --app-icon-filter: invert(1);
+          --brand-vercel: #f4faf6;
+          --brand-railway: #eef6f0;
+          --brand-heroku: #a978ff;
+          --brand-github: #f1f7f2;
+          --shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+        }
       }
 
       * {
@@ -40,12 +159,23 @@
         margin: 0;
         color: var(--ink);
         background:
-          linear-gradient(rgba(17, 24, 20, 0.045) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(17, 24, 20, 0.045) 1px, transparent 1px),
+          linear-gradient(var(--grid-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
           var(--paper);
         background-size: 48px 48px;
         font-family: "Avenir Next", "Segoe UI", sans-serif;
         line-height: 1.5;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          linear-gradient(120deg, transparent 0 18%, rgba(17, 138, 87, 0.06) 18% 18.4%, transparent 18.4% 100%),
+          linear-gradient(300deg, transparent 0 64%, rgba(192, 107, 26, 0.08) 64% 64.35%, transparent 64.35% 100%);
       }
 
       a {
@@ -62,8 +192,8 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        border-bottom: 1px solid rgba(17, 24, 20, 0.09);
-        background: rgba(245, 247, 240, 0.86);
+        border-bottom: 1px solid var(--topbar-line);
+        background: var(--topbar-bg);
         backdrop-filter: blur(18px);
       }
 
@@ -88,6 +218,7 @@
         width: 34px;
         height: 34px;
         border-radius: 8px;
+        filter: var(--app-icon-filter);
         box-shadow: 0 8px 24px rgba(17, 24, 20, 0.18);
       }
 
@@ -95,6 +226,48 @@
         display: flex;
         align-items: center;
         gap: 8px;
+      }
+
+      .nav-controls {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 14px;
+      }
+
+      .theme-switcher {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: center;
+        min-width: 236px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 3px;
+        background: var(--surface-soft);
+      }
+
+      .theme-switcher button {
+        min-height: 34px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 800;
+        transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+      }
+
+      .theme-switcher button[aria-checked="true"] {
+        background: var(--ink);
+        color: var(--button-primary-ink);
+        box-shadow: 0 8px 22px rgba(17, 24, 20, 0.16);
+      }
+
+      .theme-switcher button:focus-visible {
+        outline: 3px solid var(--focus-ring);
+        outline-offset: 2px;
       }
 
       .nav-links a {
@@ -162,7 +335,7 @@
       .lead {
         max-width: 650px;
         margin-bottom: 30px;
-        color: #38423b;
+        color: var(--lead);
         font-size: 1.22rem;
       }
 
@@ -187,13 +360,13 @@
       }
 
       .button.primary {
-        color: #fff;
+        color: var(--button-primary-ink);
         background: var(--ink);
         box-shadow: 0 16px 36px rgba(17, 24, 20, 0.2);
       }
 
       .button.secondary {
-        background: rgba(255, 255, 255, 0.55);
+        background: var(--surface-soft);
       }
 
       .button:hover,
@@ -202,15 +375,19 @@
         outline: none;
       }
 
+      .button:focus-visible {
+        box-shadow: 0 0 0 4px var(--focus-ring);
+      }
+
       .install-line {
         display: inline-flex;
         align-items: center;
         max-width: 100%;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.62);
-        color: #28312b;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        background: var(--surface-soft);
+        color: var(--code-ink);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
         overflow: hidden;
       }
 
@@ -239,8 +416,24 @@
       }
 
       .product-visual {
+        position: relative;
         justify-self: end;
         width: min(100%, 480px);
+        animation: visual-rise 720ms 140ms both cubic-bezier(0.2, 0.72, 0.18, 1);
+      }
+
+      .product-visual::before {
+        content: "";
+        position: absolute;
+        inset: -18px;
+        z-index: -1;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background:
+          linear-gradient(135deg, rgba(17, 138, 87, 0.11), transparent 28%),
+          linear-gradient(315deg, rgba(37, 110, 198, 0.12), transparent 35%),
+          var(--surface-soft);
+        transform: rotate(-2deg);
       }
 
       .mac-strip {
@@ -250,11 +443,11 @@
         align-items: center;
         justify-content: flex-end;
         gap: 11px;
-        border: 1px solid rgba(17, 24, 20, 0.18);
+        border: 1px solid var(--menu-border);
         border-bottom: 0;
         border-radius: 8px 8px 0 0;
         padding: 0 16px;
-        background: rgba(255, 255, 255, 0.84);
+        background: var(--surface);
         box-shadow: 0 18px 52px rgba(17, 24, 20, 0.1);
       }
 
@@ -285,9 +478,9 @@
       }
 
       .popover {
-        border: 1px solid rgba(17, 24, 20, 0.18);
+        border: 1px solid var(--menu-border);
         border-radius: 0 0 8px 8px;
-        background: rgba(255, 255, 255, 0.92);
+        background: var(--surface-strong);
         box-shadow: var(--shadow);
         overflow: hidden;
       }
@@ -312,6 +505,7 @@
         width: 30px;
         height: 30px;
         border-radius: 7px;
+        filter: var(--app-icon-filter);
       }
 
       .timestamp,
@@ -326,9 +520,7 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 14px;
-        background:
-          linear-gradient(90deg, rgba(17, 138, 87, 0.13), rgba(37, 110, 198, 0.1)),
-          #fff;
+        background: var(--summary-bg);
       }
 
       .summary-band strong {
@@ -344,10 +536,10 @@
       }
 
       .counter {
-        border: 1px solid rgba(17, 24, 20, 0.1);
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 8px;
-        background: rgba(255, 255, 255, 0.62);
+        background: var(--surface-soft);
       }
 
       .counter b {
@@ -374,7 +566,8 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 11px 12px;
-        background: #fff;
+        background: var(--surface-solid);
+        transition: border-color 180ms ease, transform 180ms ease;
       }
 
       .status-light {
@@ -385,14 +578,18 @@
 
       .status-light.ready {
         background: var(--green);
+        color: var(--green);
       }
 
       .status-light.building {
         background: var(--blue);
+        color: var(--blue);
+        animation: status-pulse 2s infinite;
       }
 
       .status-light.failed {
         background: var(--red);
+        color: var(--red);
       }
 
       .row-name {
@@ -446,8 +643,9 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 16px;
-        background: rgba(255, 255, 255, 0.76);
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+        background: var(--surface);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+        transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
       }
 
       .provider-heading {
@@ -465,7 +663,7 @@
         place-items: center;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.82);
+        background: var(--surface-soft);
       }
 
       .provider-icon {
@@ -490,7 +688,7 @@
       .feature-band {
         border-top: 1px solid var(--line);
         border-bottom: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.46);
+        background: var(--feature-bg);
       }
 
       .feature-grid {
@@ -535,10 +733,10 @@
       }
 
       .command-box {
-        border: 1px solid #1b261f;
+        border: 1px solid var(--terminal-border);
         border-radius: 8px;
-        background: #111814;
-        color: #e8efe9;
+        background: var(--terminal-bg);
+        color: var(--terminal-ink);
         overflow: hidden;
         box-shadow: var(--shadow);
       }
@@ -588,7 +786,7 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 14px 16px;
-        background: rgba(255, 255, 255, 0.72);
+        background: var(--surface);
       }
 
       .site-footer {
@@ -615,6 +813,74 @@
         font-weight: 800;
       }
 
+      .hero > div:first-child,
+      .provider,
+      .feature,
+      .command-box,
+      .privacy-list li {
+        animation: content-rise 620ms both cubic-bezier(0.2, 0.72, 0.18, 1);
+      }
+
+      .provider:nth-child(2),
+      .feature:nth-child(2),
+      .privacy-list li:nth-child(2) {
+        animation-delay: 70ms;
+      }
+
+      .provider:nth-child(3),
+      .feature:nth-child(3),
+      .privacy-list li:nth-child(3) {
+        animation-delay: 120ms;
+      }
+
+      .provider:nth-child(n + 4),
+      .feature:nth-child(4) {
+        animation-delay: 170ms;
+      }
+
+      @media (hover: hover) {
+        .deployment-row:hover,
+        .provider:hover {
+          border-color: var(--line-strong);
+          transform: translateY(-2px);
+        }
+      }
+
+      @keyframes content-rise {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes visual-rise {
+        from {
+          opacity: 0;
+          transform: translateY(24px) scale(0.98);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes status-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 var(--status-pulse);
+        }
+
+        50% {
+          box-shadow: 0 0 0 7px transparent;
+        }
+      }
+
       @media (max-width: 900px) {
         .hero {
           grid-template-columns: 1fr;
@@ -636,6 +902,16 @@
         .build-panel {
           grid-template-columns: 1fr;
         }
+
+        .nav {
+          align-items: flex-start;
+        }
+
+        .nav-controls {
+          align-items: flex-end;
+          flex-direction: column-reverse;
+          gap: 10px;
+        }
       }
 
       @media (max-width: 620px) {
@@ -646,12 +922,30 @@
         .nav {
           min-height: auto;
           padding: 14px 0;
-          align-items: flex-start;
+          display: grid;
+          grid-template-columns: 1fr;
+          align-items: stretch;
+          gap: 13px;
+        }
+
+        .brand {
+          width: fit-content;
+          font-size: 1.18rem;
+        }
+
+        .nav-controls {
+          align-items: stretch;
+          gap: 9px;
         }
 
         .nav-links {
-          justify-content: flex-end;
+          justify-content: flex-start;
           flex-wrap: wrap;
+        }
+
+        .theme-switcher {
+          width: 100%;
+          min-width: 0;
         }
 
         .nav-links a {
@@ -661,6 +955,7 @@
 
         .hero {
           min-height: auto;
+          padding-top: 34px;
           padding-bottom: 34px;
         }
 
@@ -699,8 +994,65 @@
           width: fit-content;
         }
 
+        .product-visual {
+          width: min(100%, 430px);
+          margin: 0 auto;
+        }
+
+        .product-visual::before {
+          inset: -10px;
+          transform: rotate(-1deg);
+        }
+
+        .popover-header,
+        .popover-footer {
+          padding: 14px;
+        }
+
+        .summary-band,
+        .deployments {
+          margin-right: 10px;
+          margin-left: 10px;
+        }
+
+        .deployments {
+          padding-right: 0;
+          padding-left: 0;
+        }
+
+        .provider,
+        .privacy-list li {
+          padding: 15px;
+        }
+
+        .button,
+        .theme-switcher button,
+        .nav-links a {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .button:active,
+        .theme-switcher button:active,
+        .nav-links a:active {
+          transform: translateY(1px);
+        }
+
         section {
           padding: 52px 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
         }
       }
     </style>
@@ -712,11 +1064,18 @@
           <img src="assets/deploybar-icon.png" alt="">
           <span>DeployBar</span>
         </a>
-        <div class="nav-links">
-          <a href="#providers">Providers</a>
-          <a href="#features">Features</a>
-          <a href="#build">Build</a>
-          <a href="https://github.com/snapre/DeployBar">Source</a>
+        <div class="nav-controls">
+          <div class="nav-links">
+            <a href="#providers">Providers</a>
+            <a href="#features">Features</a>
+            <a href="#build">Build</a>
+            <a href="https://github.com/snapre/DeployBar">Source</a>
+          </div>
+          <div class="theme-switcher" role="radiogroup" aria-label="Color theme">
+            <button type="button" role="radio" aria-checked="true" data-theme-option="system">System</button>
+            <button type="button" role="radio" aria-checked="false" data-theme-option="light">Light</button>
+            <button type="button" role="radio" aria-checked="false" data-theme-option="dark">Dark</button>
+          </div>
         </div>
       </nav>
     </header>
@@ -808,63 +1167,63 @@
         <div class="provider-grid">
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #111814; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/vercel.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-vercel); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/vercel.svg');" aria-hidden="true"></span></span>
               <strong>Vercel</strong>
             </div>
             <span class="provider-description">Project, branch, environment, team, and recent deployment discovery.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #0b0d0e; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/railway.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-railway); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/railway.svg');" aria-hidden="true"></span></span>
               <strong>Railway</strong>
             </div>
             <span class="provider-description">GraphQL-backed deployment polling for projects, services, and environments.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #00ad9f; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/netlify.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-netlify); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/netlify.svg');" aria-hidden="true"></span></span>
               <strong>Netlify</strong>
             </div>
             <span class="provider-description">Site deploys with optional context and branch filtering.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #13b887; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/render.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-render); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/render.svg');" aria-hidden="true"></span></span>
               <strong>Render</strong>
             </div>
             <span class="provider-description">Service deployment status from the Render REST API.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #f38020; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/cloudflarepages.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-cloudflare); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/cloudflarepages.svg');" aria-hidden="true"></span></span>
               <strong>Cloudflare Pages</strong>
             </div>
             <span class="provider-description">Pages projects and deployments by account and project name.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #0080ff; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/digitalocean.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-digitalocean); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/digitalocean.svg');" aria-hidden="true"></span></span>
               <strong>DigitalOcean</strong>
             </div>
             <span class="provider-description">App Platform deployments across accessible apps.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #430098; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/heroku.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-heroku); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/heroku.svg');" aria-hidden="true"></span></span>
               <strong>Heroku</strong>
             </div>
             <span class="provider-description">Release activity mapped into the same deployment timeline.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #181717; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/github.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-github); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/github.svg');" aria-hidden="true"></span></span>
               <strong>GitHub</strong>
             </div>
             <span class="provider-description">Repository deployments plus the latest status from each deployment.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: #fc6d26; --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/gitlab.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-gitlab); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/gitlab.svg');" aria-hidden="true"></span></span>
               <strong>GitLab</strong>
             </div>
             <span class="provider-description">Project deployments for GitLab.com and self-managed instances.</span>
@@ -939,5 +1298,79 @@ open .build/DeployBar.app</code></pre>
         </div>
       </div>
     </footer>
+    <script>
+      (() => {
+        const storageKey = "deploybar-theme";
+        const validThemes = new Set(["system", "light", "dark"]);
+        const root = document.documentElement;
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+        const themeButtons = Array.from(document.querySelectorAll("[data-theme-option]"));
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+        const readStoredTheme = () => {
+          try {
+            return window.localStorage.getItem(storageKey);
+          } catch {
+            return null;
+          }
+        };
+
+        const writeStoredTheme = (theme) => {
+          try {
+            window.localStorage.setItem(storageKey, theme);
+          } catch {
+          }
+        };
+
+        const getTheme = () => {
+          const savedTheme = readStoredTheme();
+          return validThemes.has(savedTheme) ? savedTheme : "system";
+        };
+
+        const resolvedTheme = (theme) => {
+          if (theme === "dark" || theme === "light") {
+            return theme;
+          }
+          return systemTheme.matches ? "dark" : "light";
+        };
+
+        const applyTheme = (theme) => {
+          root.dataset.theme = theme;
+          root.dataset.resolvedTheme = resolvedTheme(theme);
+          themeButtons.forEach((button) => {
+            const isActive = button.dataset.themeOption === theme;
+            button.setAttribute("aria-checked", String(isActive));
+          });
+          if (themeMeta) {
+            themeMeta.setAttribute("content", root.dataset.resolvedTheme === "dark" ? "#0b0f0d" : "#f5f7f0");
+          }
+        };
+
+        themeButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const theme = button.dataset.themeOption;
+            if (!validThemes.has(theme)) {
+              return;
+            }
+            writeStoredTheme(theme);
+            applyTheme(theme);
+          });
+        });
+
+        const handleSystemThemeChange = () => {
+          if (getTheme() === "system") {
+            applyTheme("system");
+          }
+        };
+
+        if (typeof systemTheme.addEventListener === "function") {
+          systemTheme.addEventListener("change", handleSystemThemeChange);
+        } else if (typeof systemTheme.addListener === "function") {
+          systemTheme.addListener(handleSystemThemeChange);
+        }
+
+        applyTheme(getTheme());
+      })();
+    </script>
   </body>
 </html>
