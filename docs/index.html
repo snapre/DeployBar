@@ -1091,7 +1091,7 @@
           </p>
           <div class="actions">
             <a class="button primary" href="#install">Install with Homebrew</a>
-            <a class="button secondary" href="https://github.com/snapre/DeployBar">View source</a>
+            <a class="button secondary" href="https://github.com/snapre/DeployBar/releases/latest">Download release</a>
           </div>
           <div class="install-line" aria-label="Homebrew install command">
             <span>Install</span>
@@ -1267,19 +1267,27 @@
             <div class="section-heading">
               <h2 id="install-title">Install the signed release.</h2>
               <p>
-                The Homebrew cask installs the latest signed and notarized DeployBar release from GitHub.
+                Use Homebrew for a managed install, or download the signed and notarized release zip directly from GitHub.
               </p>
             </div>
+            <div class="actions">
+              <a class="button primary" href="https://github.com/snapre/DeployBar/releases/latest">Download latest release</a>
+              <a class="button secondary" href="https://github.com/snapre/homebrew-tap">Homebrew tap</a>
+            </div>
             <ul class="privacy-list" aria-label="Release details">
-              <li>Published through the public <code>snapre/tap</code> Homebrew tap.</li>
+              <li>Homebrew installs from the public <code>snapre/tap</code> cask.</li>
+              <li>Direct release installs use the latest GitHub Release zip.</li>
               <li>Signed with Developer ID and accepted by Apple notarization.</li>
-              <li>Installs <code>DeployBar.app</code> into Applications.</li>
             </ul>
           </div>
-          <div class="command-box" aria-label="Homebrew commands">
+          <div class="command-box" aria-label="Install commands">
             <header aria-hidden="true"><span></span><span></span><span></span></header>
-            <pre><code>brew tap snapre/tap
-brew install --cask deploybar</code></pre>
+            <pre><code># Homebrew
+brew tap snapre/tap
+brew install --cask deploybar
+
+# Direct release
+open https://github.com/snapre/DeployBar/releases/latest</code></pre>
           </div>
         </div>
       </section>
