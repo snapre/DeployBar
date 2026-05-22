@@ -9,6 +9,8 @@ enum DeploymentPopoverLayout {
     static let headerHeight: CGFloat = 65
     static let footerHeight: CGFloat = 143
     static let issueStripHeight: CGFloat = 54
+    static let contentHorizontalPadding: CGFloat = 12
+    static let footerActionContentHorizontalPadding: CGFloat = 8
 }
 
 struct DeploymentPopoverView: View {
@@ -68,7 +70,7 @@ struct DeploymentPopoverView: View {
                 }
             }
         }
-        .padding(12)
+        .padding(DeploymentPopoverLayout.contentHorizontalPadding)
     }
 
     private var header: some View {
@@ -315,14 +317,14 @@ private struct FooterActionRow: View {
                         .foregroundStyle(shortcutColor)
                 }
             }
-            .padding(.horizontal, 18)
-            .frame(height: 32)
+            .padding(.horizontal, DeploymentPopoverLayout.footerActionContentHorizontalPadding)
+            .frame(maxWidth: .infinity, minHeight: 32, maxHeight: 32, alignment: .leading)
             .background(backgroundColor, in: RoundedRectangle(cornerRadius: 7))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, DeploymentPopoverLayout.contentHorizontalPadding)
         .onHover { isHovering = $0 && !isDisabled }
     }
 
