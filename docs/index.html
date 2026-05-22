@@ -12,13 +12,8 @@
     <link rel="icon" href="assets/deploybar-icon.png">
     <script>
       (() => {
-        try {
-          const savedTheme = window.localStorage.getItem("deploybar-theme");
-          if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") {
-            document.documentElement.dataset.theme = savedTheme;
-          }
-        } catch {
-        }
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+        document.documentElement.dataset.resolvedTheme = systemTheme.matches ? "dark" : "light";
       })();
     </script>
     <style>
@@ -207,50 +202,50 @@
 
       .nav {
         width: 100%;
-        min-height: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        padding: 0 16px;
+        padding: 0 14px;
       }
 
       .menu-left {
         min-width: 0;
         display: flex;
         align-items: center;
-        gap: 14px;
+        height: 30px;
+        gap: 18px;
       }
 
       .apple-menu {
+        height: 30px;
+        display: flex;
+        align-items: center;
         flex: none;
-        color: rgba(255, 255, 255, 0.88);
+        color: rgba(255, 255, 255, 0.94);
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-        font-size: 1rem;
+        font-size: 20px;
         line-height: 1;
+        transform: translateY(0);
       }
 
       .brand {
-        display: inline-flex;
+        height: 30px;
+        display: flex;
         align-items: center;
         flex: none;
-        gap: 7px;
-        font-family: "Avenir Next", "Segoe UI", sans-serif;
-        font-size: 0.86rem;
-        font-weight: 800;
-      }
-
-      .brand img {
-        width: 19px;
-        height: 19px;
-        border-radius: 5px;
-        box-shadow: none;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 30px;
       }
 
       .nav-links {
         display: flex;
         align-items: center;
-        gap: 12px;
+        height: 30px;
+        gap: 18px;
         min-width: 0;
       }
 
@@ -261,105 +256,25 @@
         gap: 12px;
       }
 
-      .theme-toggle {
-        width: 34px;
-        height: 34px;
-        display: grid;
-        place-items: center;
-        flex: none;
-        border: 2px solid #73b8ff;
-        border-radius: 999px;
-        padding: 0;
-        cursor: pointer;
-        box-shadow: 0 6px 18px rgba(8, 40, 78, 0.18);
-        transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
-      }
-
-      .theme-toggle:hover {
-        border-color: #9ed0ff;
-        transform: translateY(-1px);
-      }
-
-      .theme-toggle:focus-visible {
-        outline: 3px solid var(--focus-ring);
-        outline-offset: 2px;
-      }
-
-      .theme-icon {
-        position: relative;
-        width: 18px;
-        height: 18px;
-        display: block;
-      }
-
-      .theme-icon::before {
-        content: "";
-        position: absolute;
-        border-radius: 999px;
-        transition: inset 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease;
-      }
-
-      .theme-icon::after {
-        content: "";
-        position: absolute;
-        transition: opacity 160ms ease, transform 160ms ease;
-      }
-
-      :root[data-resolved-theme="light"] .theme-toggle {
-        background: #071018;
-        color: #ffffff;
-      }
-
-      :root[data-resolved-theme="light"] .theme-icon::before {
-        inset: 6px;
-        background: currentColor;
-      }
-
-      :root[data-resolved-theme="light"] .theme-icon::after {
-        inset: 1px;
-        border-radius: 999px;
-        background:
-          linear-gradient(currentColor, currentColor) 50% 0 / 2px 4px no-repeat,
-          linear-gradient(currentColor, currentColor) 50% 100% / 2px 4px no-repeat,
-          linear-gradient(currentColor, currentColor) 0 50% / 4px 2px no-repeat,
-          linear-gradient(currentColor, currentColor) 100% 50% / 4px 2px no-repeat,
-          linear-gradient(45deg, transparent 0 40%, currentColor 40% 60%, transparent 60%) 13px 1px / 4px 4px no-repeat,
-          linear-gradient(135deg, transparent 0 40%, currentColor 40% 60%, transparent 60%) 13px 13px / 4px 4px no-repeat,
-          linear-gradient(135deg, transparent 0 40%, currentColor 40% 60%, transparent 60%) 1px 1px / 4px 4px no-repeat,
-          linear-gradient(45deg, transparent 0 40%, currentColor 40% 60%, transparent 60%) 1px 13px / 4px 4px no-repeat;
-        opacity: 1;
-      }
-
-      :root[data-resolved-theme="dark"] .theme-toggle {
-        background: #ffffff;
-        color: #071018;
-      }
-
-      :root[data-resolved-theme="dark"] .theme-icon::before {
-        inset: 2px;
-        background: currentColor;
-        box-shadow: 5px -2px 0 0 #ffffff;
-        transform: rotate(-22deg);
-      }
-
-      :root[data-resolved-theme="dark"] .theme-icon::after {
-        opacity: 0;
-      }
-
       .nav-links a {
-        border: 1px solid transparent;
-        border-radius: 5px;
-        padding: 3px 2px;
-        color: rgba(255, 255, 255, 0.84);
-        font-size: 0.78rem;
-        font-weight: 700;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        color: rgba(255, 255, 255, 0.90);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 30px;
       }
 
-      .nav-links a:hover,
-      .nav-links a:focus-visible {
-        border-color: rgba(255, 255, 255, 0.26);
-        background: rgba(255, 255, 255, 0.16);
+      .nav-links a:hover {
         color: #ffffff;
+      }
+
+      .nav-links a:focus-visible {
         outline: none;
       }
 
@@ -567,10 +482,10 @@
 
       .product-visual {
         position: absolute;
-        top: 22px;
+        top: 32px;
         right: clamp(48px, 8.6vw, 176px);
         width: clamp(318px, 23.5vw, 360px);
-        min-height: calc(100vh - 30px);
+        min-height: calc(100vh - 32px);
         animation: visual-rise 720ms 140ms both cubic-bezier(0.2, 0.72, 0.18, 1);
       }
 
@@ -583,71 +498,68 @@
       .mac-status-item {
         position: relative;
         width: 28px;
-        height: 28px;
+        height: 18px;
         display: grid;
         place-items: center;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.16);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+        flex: none;
       }
 
-      .mac-status-item img {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
+      .mac-status-item svg {
+        width: 28px;
+        height: 18px;
+        display: block;
       }
 
-      .mac-status-item::after {
-        content: "";
-        position: absolute;
-        right: 2px;
-        bottom: 2px;
-        width: 6px;
-        height: 6px;
-        border: 1.5px solid rgba(255, 255, 255, 0.92);
-        border-radius: 999px;
-        background: var(--green);
+      .menu-status-dot {
+        fill: var(--green);
+        animation: menu-status-dot-cycle 15s infinite;
       }
 
       .menu-status {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 18px;
         color: rgba(255, 255, 255, 0.84);
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 400;
         white-space: nowrap;
       }
 
       .system-status-icon {
-        width: 18px;
-        height: 18px;
+        width: auto;
+        height: 14px;
         display: block;
         object-fit: contain;
-        opacity: 0.76;
+        opacity: 0.78;
         filter: brightness(0) invert(1);
       }
 
       .system-status-icon.control-center {
-        width: 20px;
-        height: 20px;
-      }
-
-      .system-status-icon.battery {
-        width: 24px;
         height: 14px;
       }
 
+      .system-status-icon.battery {
+        height: 13px;
+      }
+
+      .system-status-icon.wifi {
+        height: 12px;
+      }
+
       .system-status-icon.spotlight {
-        width: 17px;
-        height: 17px;
-        opacity: 0.58;
+        height: 14px;
+        opacity: 0.62;
+      }
+
+      .menu-status time {
+        margin-left: 3px;
+        font-weight: 600;
       }
 
       .mac-popover {
         position: absolute;
         z-index: 3;
-        top: 8px;
+        top: 0;
         right: 0;
         width: 100%;
       }
@@ -701,6 +613,7 @@
       }
 
       .product-carousel-dots span {
+        --active-dot: var(--green);
         width: 6px;
         height: 6px;
         border-radius: 999px;
@@ -710,10 +623,12 @@
       }
 
       .product-carousel-dots span:nth-child(2) {
+        --active-dot: var(--blue);
         animation-delay: 5s;
       }
 
       .product-carousel-dots span:nth-child(3) {
+        --active-dot: #ff3b3b;
         animation-delay: 10s;
       }
 
@@ -996,7 +911,7 @@
         0%,
         30% {
           width: 16px;
-          background: var(--green);
+          background: var(--active-dot);
           opacity: 1;
         }
 
@@ -1005,6 +920,24 @@
           width: 6px;
           background: var(--line-strong);
           opacity: 0.55;
+        }
+      }
+
+      @keyframes menu-status-dot-cycle {
+        0%,
+        33.32%,
+        100% {
+          fill: var(--green);
+        }
+
+        33.33%,
+        66.65% {
+          fill: var(--blue);
+        }
+
+        66.66%,
+        99.98% {
+          fill: #ff3b3b;
         }
       }
 
@@ -1084,7 +1017,7 @@
         }
 
         .menu-left {
-          gap: 10px;
+          gap: 22px;
         }
 
         .nav-controls {
@@ -1113,7 +1046,6 @@
           font-size: 0.82rem;
         }
 
-        .brand img,
         .nav-links a:nth-child(n + 2),
         .system-status-icon.control-center,
         .system-status-icon.battery,
@@ -1203,13 +1135,11 @@
         }
 
         .button,
-        .theme-toggle,
         .nav-links a {
           -webkit-tap-highlight-color: transparent;
         }
 
         .button:active,
-        .theme-toggle:active,
         .nav-links a:active {
           transform: translateY(1px);
         }
@@ -1244,7 +1174,6 @@
         <div class="menu-left">
           <a class="apple-menu" href="#top" aria-label="DeployBar home">&#63743;</a>
           <a class="brand" href="#top" aria-label="DeployBar home">
-            <img src="assets/deploybar-icon.png" alt="">
             <span>DeployBar</span>
           </a>
           <div class="nav-links">
@@ -1257,16 +1186,26 @@
         </div>
         <div class="nav-controls">
           <div class="menu-status" aria-hidden="true">
-            <span class="mac-status-item"><img src="assets/deploybar-icon.png" alt=""></span>
-            <img class="system-status-icon control-center" src="https://help.apple.com/assets/694058E34AF4DEFE100B21F0/694058E5E47399E70903F18D/en_US/3045264ba38d067fcdf39c07a1129c88.png" alt="">
-            <img class="system-status-icon battery" src="https://help.apple.com/assets/69DD569682238CF8EC0621E2/69DD569982238CF8EC0621E9/en_GB/6e0748a48e5a0245a5bd70cfaf6434f3.png" alt="">
-            <img class="system-status-icon wifi" src="https://help.apple.com/assets/694058E34AF4DEFE100B21F0/694058E5E47399E70903F18D/en_US/e6adbadfe26920bf8c4b8d74d5ec8b18.png" alt="">
-            <img class="system-status-icon spotlight" src="https://help.apple.com/assets/694058E34AF4DEFE100B21F0/694058E5E47399E70903F18D/en_US/bb4de0babc81c7fedb3e9663d00d7a3a.png" alt="">
-            <time data-menu-clock>5月22日 周五 21:52</time>
+            <span class="mac-status-item">
+              <svg viewBox="0 0 28 18" role="img" aria-label="DeployBar status icon">
+                <defs>
+                  <mask id="deploybar-status-mark">
+                    <rect width="28" height="18" fill="black"></rect>
+                    <circle cx="14" cy="9" r="9" fill="white"></circle>
+                    <path d="M8.7 11 L11 7.5 L13.3 11 L16 7 L19.3 7" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </mask>
+                </defs>
+                <rect width="28" height="18" fill="white" mask="url(#deploybar-status-mark)"></rect>
+                <circle cx="20.5" cy="12.5" r="3.5" fill="white"></circle>
+                <circle class="menu-status-dot" cx="20.5" cy="12.5" r="2.5"></circle>
+              </svg>
+            </span>
+            <img class="system-status-icon battery" src="assets/menu-battery.png" alt="">
+            <img class="system-status-icon wifi" src="assets/menu-wifi.png" alt="">
+            <img class="system-status-icon spotlight" src="assets/menu-spotlight.png" alt="">
+            <img class="system-status-icon control-center" src="assets/menu-control-center.png" alt="">
+            <time data-menu-clock>Fri May 22 11:28 PM</time>
           </div>
-          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch color theme">
-            <span class="theme-icon" aria-hidden="true"></span>
-          </button>
         </div>
       </nav>
     </header>
@@ -1332,63 +1271,63 @@
         <div class="provider-grid">
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-vercel); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/vercel.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-vercel); --icon: url('assets/provider-vercel.svg');" aria-hidden="true"></span></span>
               <strong>Vercel</strong>
             </div>
             <span class="provider-description">Project, branch, environment, team, and recent deployment discovery.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-railway); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/railway.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-railway); --icon: url('assets/provider-railway.svg');" aria-hidden="true"></span></span>
               <strong>Railway</strong>
             </div>
             <span class="provider-description">GraphQL-backed deployment polling for projects, services, and environments.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-netlify); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/netlify.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-netlify); --icon: url('assets/provider-netlify.svg');" aria-hidden="true"></span></span>
               <strong>Netlify</strong>
             </div>
             <span class="provider-description">Site deploys with optional context and branch filtering.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-render); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/render.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-render); --icon: url('assets/provider-render.svg');" aria-hidden="true"></span></span>
               <strong>Render</strong>
             </div>
             <span class="provider-description">Service deployment status from the Render REST API.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-cloudflare); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/cloudflarepages.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-cloudflare); --icon: url('assets/provider-cloudflarepages.svg');" aria-hidden="true"></span></span>
               <strong>Cloudflare Pages</strong>
             </div>
             <span class="provider-description">Pages projects and deployments by account and project name.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-digitalocean); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/digitalocean.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-digitalocean); --icon: url('assets/provider-digitalocean.svg');" aria-hidden="true"></span></span>
               <strong>DigitalOcean</strong>
             </div>
             <span class="provider-description">App Platform deployments across accessible apps.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-heroku); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/heroku.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-heroku); --icon: url('assets/provider-heroku.svg');" aria-hidden="true"></span></span>
               <strong>Heroku</strong>
             </div>
             <span class="provider-description">Release activity mapped into the same deployment timeline.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-github); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/github.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-github); --icon: url('assets/provider-github.svg');" aria-hidden="true"></span></span>
               <strong>GitHub</strong>
             </div>
             <span class="provider-description">Repository deployments plus the latest status from each deployment.</span>
           </div>
           <div class="provider">
             <div class="provider-heading">
-              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-gitlab); --icon: url('https://cdn.jsdelivr.net/npm/simple-icons@15.22.0/icons/gitlab.svg');" aria-hidden="true"></span></span>
+              <span class="provider-icon-frame"><span class="provider-icon" style="--brand: var(--brand-gitlab); --icon: url('assets/provider-gitlab.svg');" aria-hidden="true"></span></span>
               <strong>GitLab</strong>
             </div>
             <span class="provider-description">Project deployments for GitLab.com and self-managed instances.</span>
@@ -1496,65 +1435,18 @@ open .build/DeployBar.app</code></pre>
     </footer>
     <script>
       (() => {
-        const storageKey = "deploybar-theme";
-        const validThemes = new Set(["system", "light", "dark"]);
         const root = document.documentElement;
         const themeMeta = document.querySelector('meta[name="theme-color"]');
-        const themeToggle = document.querySelector("[data-theme-toggle]");
         const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
         const menuClock = document.querySelector("[data-menu-clock]");
-        const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        const readStoredTheme = () => {
-          try {
-            return window.localStorage.getItem(storageKey);
-          } catch {
-            return null;
-          }
-        };
-
-        const writeStoredTheme = (theme) => {
-          try {
-            window.localStorage.setItem(storageKey, theme);
-          } catch {
-          }
-        };
-
-        const getTheme = () => {
-          const savedTheme = readStoredTheme();
-          return validThemes.has(savedTheme) ? savedTheme : "system";
-        };
-
-        const resolvedTheme = (theme) => {
-          if (theme === "dark" || theme === "light") {
-            return theme;
-          }
-          return systemTheme.matches ? "dark" : "light";
-        };
-
-        const applyTheme = (theme) => {
-          root.dataset.theme = theme;
-          root.dataset.resolvedTheme = resolvedTheme(theme);
-          if (themeToggle) {
-            const nextTheme = root.dataset.resolvedTheme === "dark" ? "light" : "dark";
-            const nextThemeName = nextTheme === "dark" ? "dark" : "light";
-            themeToggle.setAttribute("aria-label", `Switch to ${nextThemeName} theme`);
-            themeToggle.title = theme === "system" ? `System theme, switch to ${nextThemeName}` : `Switch to ${nextThemeName}`;
-          }
+        const applySystemTheme = () => {
+          root.dataset.theme = "system";
+          root.dataset.resolvedTheme = systemTheme.matches ? "dark" : "light";
           if (themeMeta) {
             themeMeta.setAttribute("content", root.dataset.resolvedTheme === "dark" ? "#0b0f0d" : "#f5f7f0");
-          }
-        };
-
-        themeToggle?.addEventListener("click", () => {
-          const nextTheme = root.dataset.resolvedTheme === "dark" ? "light" : "dark";
-          writeStoredTheme(nextTheme);
-          applyTheme(nextTheme);
-        });
-
-        const handleSystemThemeChange = () => {
-          if (getTheme() === "system") {
-            applyTheme("system");
           }
         };
 
@@ -1563,22 +1455,24 @@ open .build/DeployBar.app</code></pre>
             return;
           }
           const now = new Date();
-          const month = now.getMonth() + 1;
+          const month = months[now.getMonth()];
           const day = now.getDate();
           const weekday = weekdays[now.getDay()];
-          const hours = String(now.getHours()).padStart(2, "0");
+          const hours = now.getHours();
+          const displayHours = hours % 12 || 12;
           const minutes = String(now.getMinutes()).padStart(2, "0");
-          menuClock.textContent = `${month}月${day}日 ${weekday} ${hours}:${minutes}`;
+          const meridiem = hours >= 12 ? "PM" : "AM";
+          menuClock.textContent = `${weekday} ${month} ${day} ${displayHours}:${minutes} ${meridiem}`;
           menuClock.dateTime = now.toISOString();
         };
 
         if (typeof systemTheme.addEventListener === "function") {
-          systemTheme.addEventListener("change", handleSystemThemeChange);
+          systemTheme.addEventListener("change", applySystemTheme);
         } else if (typeof systemTheme.addListener === "function") {
-          systemTheme.addListener(handleSystemThemeChange);
+          systemTheme.addListener(applySystemTheme);
         }
 
-        applyTheme(getTheme());
+        applySystemTheme();
         updateMenuClock();
         window.setInterval(updateMenuClock, 30_000);
       })();
