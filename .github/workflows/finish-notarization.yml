@@ -23,7 +23,7 @@ concurrency:
 jobs:
   finish:
     name: Staple and publish release
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
       - name: Resolve version
