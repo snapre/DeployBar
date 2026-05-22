@@ -5,3 +5,8 @@ DerivedData/
 dist/
 *.xcuserdata/
 .DS_Store
+*.cer
+*.certSigningRequest
+*.csr
+*.p12
+*.pem

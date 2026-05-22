@@ -49,13 +49,70 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Import signing certificate
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          if [[ -z "$MACOS_CERTIFICATE_P12_BASE64" || -z "$MACOS_CERTIFICATE_PASSWORD" || -z "$MACOS_KEYCHAIN_PASSWORD" ]]; then
+            echo "Missing macOS signing secrets." >&2
+            exit 1
+          fi
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -k "$KEYCHAIN_PATH" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Package app
         env:
-          DEPLOYBAR_AD_HOC_SIGN: "1"
           DEPLOYBAR_BUILD_CONFIGURATION: release
           DEPLOYBAR_BUILD_NUMBER: ${{ github.run_number }}
+          DEPLOYBAR_CODE_SIGN_IDENTITY: "Developer ID Application: Xiang Wu (4XHVAJRZ83)"
           DEPLOYBAR_VERSION: ${{ steps.version.outputs.version }}
         run: ./Scripts/package_app.sh
+
+      - name: Verify signature
+        run: |
+          codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
+          codesign -dv --verbose=4 .build/DeployBar.app
+
+      - name: Notarize app
+        env:
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [[ -z "$APPLE_ID" || -z "$APPLE_APP_SPECIFIC_PASSWORD" || -z "$APPLE_TEAM_ID" ]]; then
+            echo "Missing Apple notarization secrets." >&2
+            exit 1
+          fi
+
+          NOTARY_ZIP="$RUNNER_TEMP/DeployBar-notary.zip"
+          ditto -c -k --keepParent .build/DeployBar.app "$NOTARY_ZIP"
+
+          xcrun notarytool submit "$NOTARY_ZIP" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          xcrun stapler staple .build/DeployBar.app
+          xcrun stapler validate .build/DeployBar.app
+          spctl --assess --type execute --verbose=4 .build/DeployBar.app
 
       - name: Archive app
         run: |

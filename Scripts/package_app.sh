@@ -60,8 +60,11 @@ PLIST
 if command -v codesign >/dev/null 2>&1; then
   SIGN_IDENTITY="${DEPLOYBAR_CODE_SIGN_IDENTITY:-}"
   if [[ -n "$SIGN_IDENTITY" ]]; then
-    codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+    codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
+    codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null
+    codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
   elif [[ "${DEPLOYBAR_AD_HOC_SIGN:-0}" == "1" ]]; then
+    codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
     codesign --force --deep --sign - "$APP_DIR" >/dev/null
   else
     echo "Skipping ad-hoc codesign; set DEPLOYBAR_AD_HOC_SIGN=1 to force it or DEPLOYBAR_CODE_SIGN_IDENTITY to use a stable identity."
