@@ -91,7 +91,7 @@ jobs:
           codesign -dv --verbose=4 .build/DeployBar.app
 
       - name: Notarize app
-        timeout-minutes: 20
+        timeout-minutes: 70
         env:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -113,7 +113,7 @@ jobs:
           echo "$SUBMISSION_JSON"
 
           SUBMISSION_ID="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')"
-          DEADLINE=$((SECONDS + 900))
+          DEADLINE=$((SECONDS + 3600))
 
           while true; do
             INFO_JSON="$(xcrun notarytool info "$SUBMISSION_ID" \
