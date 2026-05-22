@@ -145,7 +145,7 @@ struct DeploymentPopoverView: View {
             return "Refreshing..."
         }
         if let lastRefreshAt = store.lastRefreshAt {
-            return "Updated \(lastRefreshAt.formatted(date: .omitted, time: .shortened))"
+            return "Updated \(DisplayTimestampFormatter.string(from: lastRefreshAt))"
         }
         return "Waiting for first refresh"
     }

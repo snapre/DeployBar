@@ -139,10 +139,10 @@ struct DeploymentRowView: View {
 
     private var timeSummary: String {
         if snapshot.isStale {
-            return "stale \(snapshot.lastUpdatedAt.formatted(date: .omitted, time: .shortened))"
+            return "stale \(DisplayTimestampFormatter.string(from: snapshot.lastUpdatedAt))"
         }
         if let displayDate = snapshot.finishedAt ?? snapshot.createdAt ?? snapshot.startedAt {
-            let time = displayDate.formatted(date: .omitted, time: .shortened)
+            let time = DisplayTimestampFormatter.string(from: displayDate)
             if let duration = snapshot.duration {
                 return "\(time) / \(compactDuration(duration))"
             }
@@ -151,7 +151,7 @@ struct DeploymentRowView: View {
         if let duration = snapshot.duration {
             return compactDuration(duration)
         }
-        return "Updated \(snapshot.lastUpdatedAt.formatted(date: .omitted, time: .shortened))"
+        return "Updated \(DisplayTimestampFormatter.string(from: snapshot.lastUpdatedAt))"
     }
 
     private func compactDuration(_ duration: TimeInterval) -> String {
