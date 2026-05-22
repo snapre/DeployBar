@@ -7,11 +7,34 @@ cd "$ROOT_DIR"
 CONFIGURATION="${DEPLOYBAR_BUILD_CONFIGURATION:-debug}"
 APP_VERSION="${DEPLOYBAR_VERSION:-0.1.0}"
 BUILD_NUMBER="${DEPLOYBAR_BUILD_NUMBER:-1}"
+BUILD_ARCHS_VALUE="${DEPLOYBAR_BUILD_ARCHS-arm64 x86_64}"
+IFS=' ' read -r -a BUILD_ARCHS <<< "$BUILD_ARCHS_VALUE"
 
-swift build -c "$CONFIGURATION" --product DeployBar
+BUILD_ARGS=(-c "$CONFIGURATION" --product DeployBar)
+for ARCH in "${BUILD_ARCHS[@]}"; do
+  BUILD_ARGS+=(--arch "$ARCH")
+done
+
+swift build "${BUILD_ARGS[@]}"
 
 APP_DIR="$ROOT_DIR/.build/DeployBar.app"
-EXECUTABLE="$ROOT_DIR/.build/$CONFIGURATION/DeployBar"
+if [[ ${#BUILD_ARCHS[@]} -gt 0 ]]; then
+  case "$CONFIGURATION" in
+    debug)
+      PRODUCT_CONFIGURATION="Debug"
+      ;;
+    release)
+      PRODUCT_CONFIGURATION="Release"
+      ;;
+    *)
+      echo "Unsupported build configuration: $CONFIGURATION" >&2
+      exit 1
+      ;;
+  esac
+  EXECUTABLE="$ROOT_DIR/.build/apple/Products/$PRODUCT_CONFIGURATION/DeployBar"
+else
+  EXECUTABLE="$ROOT_DIR/.build/$CONFIGURATION/DeployBar"
+fi
 RESOURCES_DIR="$ROOT_DIR/Sources/DeployBar/Resources"
 ICON_FILE="$RESOURCES_DIR/DeployBar.icns"
 
@@ -20,6 +43,9 @@ mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 cp "$EXECUTABLE" "$APP_DIR/Contents/MacOS/DeployBar"
+if [[ ${#BUILD_ARCHS[@]} -gt 0 ]] && command -v lipo >/dev/null 2>&1; then
+  lipo "$APP_DIR/Contents/MacOS/DeployBar" -verify_arch "${BUILD_ARCHS[@]}"
+fi
 if [[ -d "$RESOURCES_DIR" ]]; then
   ditto "$RESOURCES_DIR" "$APP_DIR/Contents/Resources"
   find "$APP_DIR/Contents/Resources" \( -name ".DS_Store" -o -name ".gitkeep" \) -delete
@@ -48,7 +74,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key>
   <string>${BUILD_NUMBER}</string>
   <key>LSMinimumSystemVersion</key>
-  <string>14.0</string>
+  <string>13.0</string>
   <key>LSUIElement</key>
   <true/>
   <key>NSHumanReadableCopyright</key>
@@ -67,11 +93,11 @@ if command -v codesign >/dev/null 2>&1; then
     else
       codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
     fi
-  elif [[ "${DEPLOYBAR_AD_HOC_SIGN:-0}" == "1" ]]; then
+  elif [[ "${DEPLOYBAR_AD_HOC_SIGN:-1}" == "1" ]]; then
     codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
     codesign --force --deep --sign - "$APP_DIR" >/dev/null
   else
-    echo "Skipping ad-hoc codesign; set DEPLOYBAR_AD_HOC_SIGN=1 to force it or DEPLOYBAR_CODE_SIGN_IDENTITY to use a stable identity."
+    echo "Skipping codesign; set DEPLOYBAR_AD_HOC_SIGN=1 for local signing or DEPLOYBAR_CODE_SIGN_IDENTITY to use a stable identity."
   fi
 fi
 

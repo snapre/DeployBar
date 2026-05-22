@@ -6,7 +6,7 @@ let package = Package(
     name: "DeployBar",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v13)
     ],
     products: [
         .executable(name: "DeployBar", targets: ["DeployBar"]),

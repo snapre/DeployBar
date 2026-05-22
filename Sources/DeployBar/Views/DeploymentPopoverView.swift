@@ -19,7 +19,6 @@ struct DeploymentPopoverView: View {
     @ObservedObject var store: DeploymentStore
     var usesScrollView = true
     @Environment(\.openURL) private var openURL
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,7 +28,7 @@ struct DeploymentPopoverView: View {
             if store.snapshots.isEmpty {
                 PopoverEmptyState(
                     hasAccounts: store.hasConfiguredAccounts,
-                    onOpenSettings: { openSettings() },
+                    onOpenSettings: openSettingsWindow,
                     onRefresh: { store.refresh(manual: true) }
                 )
                 .layoutPriority(1)
@@ -109,12 +108,11 @@ struct DeploymentPopoverView: View {
                     store.refresh(manual: true)
                 }
                 FooterActionRow(title: "Settings...", systemImage: "gearshape", shortcut: "⌘,", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                    openSettings()
+                    openSettingsWindow()
                 }
                 FooterActionRow(title: "About DeployBar", systemImage: "info.circle", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
                     UserDefaults.standard.set(SettingsTab.about.rawValue, forKey: SettingsTab.storageKey)
-                    NSApp.activate(ignoringOtherApps: true)
-                    openSettings()
+                    openSettingsWindow()
                 }
                 FooterActionRow(title: "Quit", systemImage: "power", shortcut: "⌘Q", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
                     NSApp.terminate(nil)
@@ -247,6 +245,13 @@ struct DeploymentPopoverView: View {
     private func open(_ snapshot: DeploymentSnapshot) {
         if let url = snapshot.dashboardURL ?? snapshot.deploymentURL {
             openURL(url)
+        }
+    }
+
+    private func openSettingsWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
 

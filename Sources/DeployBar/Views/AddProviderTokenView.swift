@@ -62,7 +62,7 @@ struct AddProviderTokenView: View {
         }
         .padding(14)
         .background(.quaternary.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
-        .onChange(of: provider) {
+        .onChange(of: provider) { _ in
             validationMessage = nil
             resetProviderScopedFields()
         }
@@ -101,7 +101,7 @@ struct AddProviderTokenView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: railwayTokenKind) {
+                .onChange(of: railwayTokenKind) { _ in
                     resetRailwayDiscovery()
                 }
 
@@ -195,7 +195,7 @@ struct AddProviderTokenView: View {
                     Text(project.name).tag(project.id)
                 }
             }
-            .onChange(of: projectID) {
+            .onChange(of: projectID) { _ in
                 applySelectedProject()
             }
 
@@ -205,7 +205,7 @@ struct AddProviderTokenView: View {
                         Text(service.name).tag(service.id)
                     }
                 }
-                .onChange(of: serviceID) {
+                .onChange(of: serviceID) { _ in
                     serviceName = selectedRailwayService?.name ?? serviceName
                 }
             } else {
@@ -221,7 +221,7 @@ struct AddProviderTokenView: View {
                         Text(environment.name).tag(environment.id)
                     }
                 }
-                .onChange(of: environmentID) {
+                .onChange(of: environmentID) { _ in
                     environmentName = selectedRailwayEnvironment?.name ?? environmentName
                 }
             } else {

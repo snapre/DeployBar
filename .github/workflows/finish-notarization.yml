@@ -96,6 +96,9 @@ jobs:
           mkdir -p work dist
 
           ditto -x -k "$SIGNED_ZIP" work
+          lipo work/DeployBar.app/Contents/MacOS/DeployBar -verify_arch arm64 x86_64
+          xcrun stapler staple work/DeployBar.app
+          xcrun stapler validate work/DeployBar.app
           spctl --assess --type execute --verbose=4 work/DeployBar.app
 
           ditto -c -k --keepParent work/DeployBar.app "dist/DeployBar-${VERSION}-macOS.zip"

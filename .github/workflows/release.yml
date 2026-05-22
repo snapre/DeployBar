@@ -83,6 +83,7 @@ jobs:
       - name: Package app
         env:
           DEPLOYBAR_BUILD_CONFIGURATION: release
+          DEPLOYBAR_BUILD_ARCHS: "arm64 x86_64"
           DEPLOYBAR_BUILD_NUMBER: ${{ github.run_number }}
           DEPLOYBAR_CODE_SIGN_IDENTITY: "Developer ID Application: Xiang Wu (4XHVAJRZ83)"
           DEPLOYBAR_CODE_SIGN_KEYCHAIN: ${{ runner.temp }}/app-signing.keychain-db
@@ -91,6 +92,8 @@ jobs:
 
       - name: Verify signature
         run: |
+          lipo .build/DeployBar.app/Contents/MacOS/DeployBar -verify_arch arm64 x86_64
+          lipo -info .build/DeployBar.app/Contents/MacOS/DeployBar
           codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
           codesign -dv --verbose=4 .build/DeployBar.app
           CERT_DIR="$(mktemp -d)"

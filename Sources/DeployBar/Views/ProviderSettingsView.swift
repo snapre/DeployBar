@@ -351,7 +351,7 @@ private struct AddMonitoredTargetInline: View {
                     Text(project.name).tag(project.id)
                 }
             }
-            .onChange(of: projectID) {
+            .onChange(of: projectID) { _ in
                 applySelectedVercelProject()
             }
 
@@ -421,7 +421,7 @@ private struct AddMonitoredTargetInline: View {
                     Text(project.name).tag(project.id)
                 }
             }
-            .onChange(of: projectID) {
+            .onChange(of: projectID) { _ in
                 applySelectedProject()
             }
 
@@ -431,7 +431,7 @@ private struct AddMonitoredTargetInline: View {
                         Text(service.name).tag(service.id)
                     }
                 }
-                .onChange(of: serviceID) {
+                .onChange(of: serviceID) { _ in
                     serviceName = selectedRailwayService?.name ?? serviceName
                     applyFirstAvailableRailwayEnvironment()
                 }
@@ -448,7 +448,7 @@ private struct AddMonitoredTargetInline: View {
                         Text(environment.name).tag(environment.id)
                     }
                 }
-                .onChange(of: environmentID) {
+                .onChange(of: environmentID) { _ in
                     environmentName = selectedRailwayEnvironment?.name ?? environmentName
                 }
             } else {

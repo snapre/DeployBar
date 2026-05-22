@@ -44,7 +44,7 @@ brew install --cask deploybar
 
 Build and test:
 
-The package targets macOS 14+ and uses Swift 6.
+The package targets macOS 13+ and uses Swift 6.
 
 ```bash
 swift build
