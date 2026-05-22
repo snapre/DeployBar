@@ -61,13 +61,16 @@ jobs:
           fi
 
           CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          DEVELOPER_ID_CA_PATH="$RUNNER_TEMP/DeveloperIDG2CA.cer"
           KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
 
+          curl -fsSLo "$DEVELOPER_ID_CA_PATH" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
           printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
 
           security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$DEVELOPER_ID_CA_PATH" -k "$KEYCHAIN_PATH"
           security import "$CERTIFICATE_PATH" \
             -k "$KEYCHAIN_PATH" \
             -P "$MACOS_CERTIFICATE_PASSWORD" \
@@ -82,6 +85,7 @@ jobs:
           DEPLOYBAR_BUILD_CONFIGURATION: release
           DEPLOYBAR_BUILD_NUMBER: ${{ github.run_number }}
           DEPLOYBAR_CODE_SIGN_IDENTITY: "Developer ID Application: Xiang Wu (4XHVAJRZ83)"
+          DEPLOYBAR_CODE_SIGN_KEYCHAIN: ${{ runner.temp }}/app-signing.keychain-db
           DEPLOYBAR_VERSION: ${{ steps.version.outputs.version }}
         run: ./Scripts/package_app.sh
 
@@ -95,6 +99,8 @@ jobs:
             codesign -d --extract-certificates "$GITHUB_WORKSPACE/.build/DeployBar.app"
           )
           test -f "$CERT_DIR/codesign0"
+          security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db" || true
+          codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
 
       - name: Submit app for notarization
         id: notarization
@@ -112,6 +118,9 @@ jobs:
           mkdir -p dist notarization
           SIGNED_ZIP="dist/DeployBar-${VERSION}-macOS-signed.zip"
           ditto -c -k --keepParent .build/DeployBar.app "$SIGNED_ZIP"
+          VERIFY_DIR="$(mktemp -d)"
+          ditto -x -k "$SIGNED_ZIP" "$VERIFY_DIR"
+          codesign --verify --deep --strict --verbose=2 "$VERIFY_DIR/DeployBar.app"
 
           SUBMISSION_JSON="$(xcrun notarytool submit "$SIGNED_ZIP" \
             --apple-id "$APPLE_ID" \

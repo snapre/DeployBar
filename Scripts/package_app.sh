@@ -60,8 +60,13 @@ PLIST
 if command -v codesign >/dev/null 2>&1; then
   SIGN_IDENTITY="${DEPLOYBAR_CODE_SIGN_IDENTITY:-}"
   if [[ -n "$SIGN_IDENTITY" ]]; then
+    SIGN_KEYCHAIN="${DEPLOYBAR_CODE_SIGN_KEYCHAIN:-}"
     codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
-    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+    if [[ -n "$SIGN_KEYCHAIN" ]]; then
+      codesign --force --deep --options runtime --timestamp --keychain "$SIGN_KEYCHAIN" --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+    else
+      codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+    fi
   elif [[ "${DEPLOYBAR_AD_HOC_SIGN:-0}" == "1" ]]; then
     codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
     codesign --force --deep --sign - "$APP_DIR" >/dev/null
