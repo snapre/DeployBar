@@ -31,6 +31,15 @@ This repository currently contains:
 
 The next implementation phase is deeper provider diagnostics, optional failure log tailing, and polish around account/resource discovery.
 
+## Installation
+
+Install the latest signed and notarized release with Homebrew:
+
+```bash
+brew tap snapre/tap
+brew install --cask deploybar
+```
+
 ## Development
 
 Build and test:
