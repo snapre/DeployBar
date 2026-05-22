@@ -1066,6 +1066,7 @@
         </a>
         <div class="nav-controls">
           <div class="nav-links">
+            <a href="#install">Install</a>
             <a href="#providers">Providers</a>
             <a href="#features">Features</a>
             <a href="#build">Build</a>
@@ -1089,12 +1090,12 @@
             A native menu bar app for watching cloud deployment status across the providers your projects already use. Keep builds, failures, stale snapshots, and release notifications in one small macOS surface.
           </p>
           <div class="actions">
-            <a class="button primary" href="#build">Build from source</a>
+            <a class="button primary" href="#install">Install with Homebrew</a>
             <a class="button secondary" href="https://github.com/snapre/DeployBar">View source</a>
           </div>
-          <div class="install-line" aria-label="Build command">
-            <span>Build</span>
-            <code>swift build &amp;&amp; swift run DeployBar</code>
+          <div class="install-line" aria-label="Homebrew install command">
+            <span>Install</span>
+            <code>brew install --cask snapre/tap/deploybar</code>
           </div>
           <p class="meta">Free and open source &middot; macOS 14+ &middot; Swift 6 &middot; no backend service</p>
         </div>
@@ -1256,6 +1257,29 @@
               <h3>Provider diagnostics</h3>
               <p>Refresh issues, stale data, and authentication failures surface without leaking secrets.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="site-shell" aria-labelledby="install-title">
+        <div class="build-panel">
+          <div>
+            <div class="section-heading">
+              <h2 id="install-title">Install the signed release.</h2>
+              <p>
+                The Homebrew cask installs the latest signed and notarized DeployBar release from GitHub.
+              </p>
+            </div>
+            <ul class="privacy-list" aria-label="Release details">
+              <li>Published through the public <code>snapre/tap</code> Homebrew tap.</li>
+              <li>Signed with Developer ID and accepted by Apple notarization.</li>
+              <li>Installs <code>DeployBar.app</code> into Applications.</li>
+            </ul>
+          </div>
+          <div class="command-box" aria-label="Homebrew commands">
+            <header aria-hidden="true"><span></span><span></span><span></span></header>
+            <pre><code>brew tap snapre/tap
+brew install --cask deploybar</code></pre>
           </div>
         </div>
       </section>
