@@ -93,23 +93,18 @@ private struct WebsitePreviewGroup {
 }
 
 private struct WebsitePopoverScreenshot: View {
-    static let size = CGSize(width: 500, height: 830)
+    static let size = CGSize(width: DeploymentPopoverView.preferredWidth, height: 786)
 
     @ObservedObject var store: DeploymentStore
 
     var body: some View {
-        ZStack {
-            Color.clear
-
-            DeploymentPopoverView(store: store, usesScrollView: false)
-                .frame(width: DeploymentPopoverView.preferredWidth, height: 786)
-                .background(Color(nsColor: .windowBackgroundColor).opacity(0.97))
-                .clipShape(RoundedRectangle(cornerRadius: 22))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.34), lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.22), radius: 24, x: 0, y: 16)
+        DeploymentPopoverView(store: store, usesScrollView: false)
+            .frame(width: Self.size.width, height: Self.size.height)
+            .background(Color(nsColor: .windowBackgroundColor).opacity(0.97))
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.34), lineWidth: 1)
         }
         .frame(width: Self.size.width, height: Self.size.height)
     }
