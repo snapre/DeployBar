@@ -89,6 +89,12 @@ jobs:
         run: |
           codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
           codesign -dv --verbose=4 .build/DeployBar.app
+          CERT_DIR="$(mktemp -d)"
+          (
+            cd "$CERT_DIR"
+            codesign -d --extract-certificates "$GITHUB_WORKSPACE/.build/DeployBar.app"
+          )
+          test -f "$CERT_DIR/codesign0"
 
       - name: Submit app for notarization
         id: notarization

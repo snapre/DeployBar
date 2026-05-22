@@ -61,8 +61,7 @@ if command -v codesign >/dev/null 2>&1; then
   SIGN_IDENTITY="${DEPLOYBAR_CODE_SIGN_IDENTITY:-}"
   if [[ -n "$SIGN_IDENTITY" ]]; then
     codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
-    codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null
-    codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
   elif [[ "${DEPLOYBAR_AD_HOC_SIGN:-0}" == "1" ]]; then
     codesign --remove-signature "$APP_DIR/Contents/MacOS/DeployBar" >/dev/null 2>&1 || true
     codesign --force --deep --sign - "$APP_DIR" >/dev/null
