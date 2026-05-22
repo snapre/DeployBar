@@ -91,6 +91,7 @@ jobs:
           codesign -dv --verbose=4 .build/DeployBar.app
 
       - name: Notarize app
+        timeout-minutes: 20
         env:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -104,11 +105,45 @@ jobs:
           NOTARY_ZIP="$RUNNER_TEMP/DeployBar-notary.zip"
           ditto -c -k --keepParent .build/DeployBar.app "$NOTARY_ZIP"
 
-          xcrun notarytool submit "$NOTARY_ZIP" \
+          SUBMISSION_JSON="$(xcrun notarytool submit "$NOTARY_ZIP" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
+            --output-format json)"
+          echo "$SUBMISSION_JSON"
+
+          SUBMISSION_ID="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')"
+          DEADLINE=$((SECONDS + 900))
+
+          while true; do
+            INFO_JSON="$(xcrun notarytool info "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json)"
+            STATUS="$(printf '%s' "$INFO_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["status"])')"
+            echo "Notarization status: $STATUS"
+
+            case "$STATUS" in
+              Accepted)
+                break
+                ;;
+              Invalid|Rejected)
+                xcrun notarytool log "$SUBMISSION_ID" \
+                  --apple-id "$APPLE_ID" \
+                  --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                  --team-id "$APPLE_TEAM_ID" || true
+                exit 1
+                ;;
+            esac
+
+            if (( SECONDS >= DEADLINE )); then
+              echo "Timed out waiting for notarization submission $SUBMISSION_ID." >&2
+              exit 1
+            fi
+
+            sleep 30
+          done
 
           xcrun stapler staple .build/DeployBar.app
           xcrun stapler validate .build/DeployBar.app
