@@ -116,10 +116,10 @@ jobs:
           TAG_NAME: ${{ steps.version.outputs.tag_name }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" dist/* --clobber
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG_NAME" dist/* --title "DeployBar $VERSION" --generate-notes
+            gh release create "$TAG_NAME" dist/* --title "DeployBar $VERSION" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi
 
       - name: Summary
