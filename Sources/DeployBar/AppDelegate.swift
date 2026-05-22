@@ -12,7 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let notificationCenter = UNUserNotificationCenter.current()
         notificationCenter.delegate = notificationDelegate
-        notificationCenter.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        Task.detached {
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+        }
 
         menuBarController = MenuBarController(store: store)
         store.start()
