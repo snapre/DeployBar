@@ -135,12 +135,7 @@ private enum ProviderLogoAssets {
             return cached
         }
 
-        guard let url = Bundle.module.url(forResource: name, withExtension: "svg")
-            ?? Bundle.module.url(
-                forResource: name,
-                withExtension: "svg",
-                subdirectory: "ProviderLogos"
-            ),
+        guard let url = resourceURL(named: name),
             let image = NSImage(contentsOf: url)
         else {
             return nil
@@ -149,6 +144,13 @@ private enum ProviderLogoAssets {
         image.isTemplate = true
         cache.setObject(image, forKey: key)
         return image
+    }
+
+    private static func resourceURL(named name: String) -> URL? {
+        Bundle.main.url(forResource: name, withExtension: "svg")
+            ?? Bundle.main.url(forResource: name, withExtension: "svg", subdirectory: "ProviderLogos")
+            ?? Bundle.module.url(forResource: name, withExtension: "svg")
+            ?? Bundle.module.url(forResource: name, withExtension: "svg", subdirectory: "ProviderLogos")
     }
 }
 

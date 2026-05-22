@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, for example v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          TAG_NAME="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG_NAME#v}"
+
+          if [[ -z "$TAG_NAME" || "$TAG_NAME" == "$VERSION" ]]; then
+            echo "Release tags must use the v<version> format, for example v0.1.0." >&2
+            exit 1
+          fi
+
+          git rev-parse "${TAG_NAME}^{commit}" >/dev/null
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: swift test
+
+      - name: Package app
+        env:
+          DEPLOYBAR_AD_HOC_SIGN: "1"
+          DEPLOYBAR_BUILD_CONFIGURATION: release
+          DEPLOYBAR_BUILD_NUMBER: ${{ github.run_number }}
+          DEPLOYBAR_VERSION: ${{ steps.version.outputs.version }}
+        run: ./Scripts/package_app.sh
+
+      - name: Archive app
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent .build/DeployBar.app "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip"
+          shasum -a 256 "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip" > "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip.sha256"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeployBar-${{ steps.version.outputs.version }}-macOS
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.version.outputs.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" dist/* --clobber
+          else
+            gh release create "$TAG_NAME" dist/* --title "DeployBar $VERSION" --generate-notes
+          fi

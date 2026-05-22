@@ -4,26 +4,31 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-swift build -c debug --product DeployBar
+CONFIGURATION="${DEPLOYBAR_BUILD_CONFIGURATION:-debug}"
+APP_VERSION="${DEPLOYBAR_VERSION:-0.1.0}"
+BUILD_NUMBER="${DEPLOYBAR_BUILD_NUMBER:-1}"
+
+swift build -c "$CONFIGURATION" --product DeployBar
 
 APP_DIR="$ROOT_DIR/.build/DeployBar.app"
-EXECUTABLE="$ROOT_DIR/.build/debug/DeployBar"
-ICON_FILE="$ROOT_DIR/Sources/DeployBar/Resources/DeployBar.icns"
-RESOURCE_BUNDLE="$ROOT_DIR/.build/debug/DeployBar_DeployBar.bundle"
+EXECUTABLE="$ROOT_DIR/.build/$CONFIGURATION/DeployBar"
+RESOURCES_DIR="$ROOT_DIR/Sources/DeployBar/Resources"
+ICON_FILE="$RESOURCES_DIR/DeployBar.icns"
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 cp "$EXECUTABLE" "$APP_DIR/Contents/MacOS/DeployBar"
+if [[ -d "$RESOURCES_DIR" ]]; then
+  ditto "$RESOURCES_DIR" "$APP_DIR/Contents/Resources"
+  find "$APP_DIR/Contents/Resources" \( -name ".DS_Store" -o -name ".gitkeep" \) -delete
+fi
 if [[ -f "$ICON_FILE" ]]; then
   cp "$ICON_FILE" "$APP_DIR/Contents/Resources/DeployBar.icns"
 fi
-if [[ -d "$RESOURCE_BUNDLE" ]]; then
-  cp -R "$RESOURCE_BUNDLE" "$APP_DIR/DeployBar_DeployBar.bundle"
-fi
 
-cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
+cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -39,9 +44,9 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>${APP_VERSION}</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>${BUILD_NUMBER}</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>
