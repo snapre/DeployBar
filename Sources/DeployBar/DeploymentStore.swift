@@ -242,3 +242,25 @@ final class DeploymentStore: ObservableObject {
 
     private static let liveDeploymentRefreshInterval: TimeInterval = 10
 }
+
+#if DEBUG
+extension DeploymentStore {
+    func loadWebsitePreview(
+        snapshots: [DeploymentSnapshot],
+        issues: [ProviderIssue] = [],
+        lastRefreshAt: Date = Date()
+    ) {
+        self.snapshots = snapshots
+        self.issues = issues
+        self.isRefreshing = false
+        self.lastRefreshAt = lastRefreshAt
+        self.settings = DeployBarSettings(
+            refreshCadence: .manual,
+            accounts: Array(Set(snapshots.map(\.provider))).sorted { $0.rawValue < $1.rawValue }.map { provider in
+                ProviderAccount(provider: provider, displayName: provider.displayName, tokenReference: "website-preview")
+            },
+            showMockProvider: false
+        )
+    }
+}
+#endif

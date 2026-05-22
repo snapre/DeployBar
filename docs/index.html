@@ -418,7 +418,7 @@
       .product-visual {
         position: relative;
         justify-self: end;
-        width: min(100%, 480px);
+        width: min(100%, 430px);
         animation: visual-rise 720ms 140ms both cubic-bezier(0.2, 0.72, 0.18, 1);
       }
 
@@ -436,178 +436,58 @@
         transform: rotate(-2deg);
       }
 
-      .mac-strip {
+      .product-screenshot {
+        display: block;
+        position: absolute;
+        inset: 0;
         width: 100%;
-        height: 42px;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        animation: preview-cycle 15s infinite;
+      }
+
+      .product-screenshot:nth-child(2) {
+        animation-delay: 5s;
+      }
+
+      .product-screenshot:nth-child(3) {
+        animation-delay: 10s;
+      }
+
+      .product-carousel {
+        position: relative;
+        aspect-ratio: 1000 / 1660;
+      }
+
+      .product-carousel-dots {
+        position: absolute;
+        right: 24%;
+        bottom: 5.5%;
         display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 11px;
-        border: 1px solid var(--menu-border);
-        border-bottom: 0;
-        border-radius: 8px 8px 0 0;
-        padding: 0 16px;
-        background: var(--surface);
-        box-shadow: 0 18px 52px rgba(17, 24, 20, 0.1);
-      }
-
-      .strip-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--line-strong);
-      }
-
-      .strip-status {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: 5px 9px;
-        font-size: 0.75rem;
-        font-weight: 800;
-      }
-
-      .strip-status::before {
-        content: "";
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--green);
-      }
-
-      .popover {
-        border: 1px solid var(--menu-border);
-        border-radius: 0 0 8px 8px;
-        background: var(--surface-strong);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .popover-header,
-      .popover-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 16px 18px;
-      }
-
-      .popover-title {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 800;
-      }
-
-      .popover-title img {
-        width: 30px;
-        height: 30px;
-        border-radius: 7px;
-        filter: var(--app-icon-filter);
-      }
-
-      .timestamp,
-      .row-meta,
-      .popover-footer {
-        color: var(--muted);
-        font-size: 0.84rem;
-      }
-
-      .summary-band {
-        margin: 0 14px 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 14px;
-        background: var(--summary-bg);
-      }
-
-      .summary-band strong {
-        display: block;
-        margin-bottom: 10px;
-        font-size: 1.12rem;
-      }
-
-      .counters {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
         gap: 6px;
-      }
-
-      .counter {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 8px;
-        background: var(--surface-soft);
-      }
-
-      .counter b {
-        display: block;
-        font-size: 1rem;
-      }
-
-      .counter span {
-        color: var(--muted);
-        font-size: 0.72rem;
-      }
-
-      .deployments {
-        display: grid;
-        gap: 9px;
-        padding: 0 14px 14px;
-      }
-
-      .deployment-row {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 10px;
-        align-items: center;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 11px 12px;
-        background: var(--surface-solid);
-        transition: border-color 180ms ease, transform 180ms ease;
-      }
-
-      .status-light {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-      }
-
-      .status-light.ready {
-        background: var(--green);
-        color: var(--green);
-      }
-
-      .status-light.building {
-        background: var(--blue);
-        color: var(--blue);
-        animation: status-pulse 2s infinite;
-      }
-
-      .status-light.failed {
-        background: var(--red);
-        color: var(--red);
-      }
-
-      .row-name {
-        display: block;
-        font-weight: 800;
-      }
-
-      .provider-pill {
-        border: 1px solid var(--line);
+        padding: 5px 7px;
+        border: 1px solid rgba(17, 24, 20, 0.08);
         border-radius: 999px;
-        padding: 4px 8px;
-        color: var(--muted);
-        font-size: 0.75rem;
-        font-weight: 800;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(10px);
       }
 
-      .popover-footer {
-        border-top: 1px solid var(--line);
+      .product-carousel-dots span {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--line-strong);
+        opacity: 0.55;
+        animation: preview-dot-cycle 15s infinite;
+      }
+
+      .product-carousel-dots span:nth-child(2) {
+        animation-delay: 5s;
+      }
+
+      .product-carousel-dots span:nth-child(3) {
+        animation-delay: 10s;
       }
 
       section {
@@ -839,7 +719,6 @@
       }
 
       @media (hover: hover) {
-        .deployment-row:hover,
         .provider:hover {
           border-color: var(--line-strong);
           transform: translateY(-2px);
@@ -870,14 +749,35 @@
         }
       }
 
-      @keyframes status-pulse {
+      @keyframes preview-cycle {
         0%,
-        100% {
-          box-shadow: 0 0 0 0 var(--status-pulse);
+        30% {
+          opacity: 1;
         }
 
-        50% {
-          box-shadow: 0 0 0 7px transparent;
+        36%,
+        94% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes preview-dot-cycle {
+        0%,
+        30% {
+          width: 16px;
+          background: var(--green);
+          opacity: 1;
+        }
+
+        36%,
+        100% {
+          width: 6px;
+          background: var(--line-strong);
+          opacity: 0.55;
         }
       }
 
@@ -981,19 +881,6 @@
           border-bottom: 1px solid var(--line);
         }
 
-        .counters {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .deployment-row {
-          grid-template-columns: auto 1fr;
-        }
-
-        .deployment-row .provider-pill {
-          grid-column: 2;
-          width: fit-content;
-        }
-
         .product-visual {
           width: min(100%, 430px);
           margin: 0 auto;
@@ -1002,22 +889,6 @@
         .product-visual::before {
           inset: -10px;
           transform: rotate(-1deg);
-        }
-
-        .popover-header,
-        .popover-footer {
-          padding: 14px;
-        }
-
-        .summary-band,
-        .deployments {
-          margin-right: 10px;
-          margin-left: 10px;
-        }
-
-        .deployments {
-          padding-right: 0;
-          padding-left: 0;
         }
 
         .provider,
@@ -1053,6 +924,10 @@
           animation-duration: 1ms !important;
           animation-iteration-count: 1 !important;
           transition-duration: 1ms !important;
+        }
+
+        .product-screenshot:first-child {
+          opacity: 1;
         }
       }
     </style>
@@ -1100,60 +975,30 @@
           <p class="meta">Free and open source &middot; macOS 14+ &middot; Swift 6 &middot; no backend service</p>
         </div>
 
-        <div class="product-visual" aria-label="DeployBar menu bar preview">
-          <div class="mac-strip">
-            <span class="strip-dot"></span>
-            <span class="strip-dot"></span>
-            <span class="strip-status">All clear</span>
-          </div>
-          <div class="popover">
-            <div class="popover-header">
-              <div class="popover-title">
-                <img src="assets/deploybar-icon.png" alt="">
-                <span>DeployBar</span>
-              </div>
-              <span class="timestamp">Updated 09:41</span>
-            </div>
-            <div class="summary-band">
-              <strong>2 deploying, 1 needs attention</strong>
-              <div class="counters">
-                <div class="counter"><b>2</b><span>Active</span></div>
-                <div class="counter"><b>0</b><span>Waiting</span></div>
-                <div class="counter"><b>1</b><span>Attention</span></div>
-                <div class="counter"><b>0</b><span>Issues</span></div>
-              </div>
-            </div>
-            <div class="deployments">
-              <div class="deployment-row">
-                <span class="status-light building"></span>
-                <span>
-                  <span class="row-name">dashboard-web</span>
-                  <span class="row-meta">production from main</span>
-                </span>
-                <span class="provider-pill">Vercel</span>
-              </div>
-              <div class="deployment-row">
-                <span class="status-light ready"></span>
-                <span>
-                  <span class="row-name">api-service</span>
-                  <span class="row-meta">ready 3 minutes ago</span>
-                </span>
-                <span class="provider-pill">Railway</span>
-              </div>
-              <div class="deployment-row">
-                <span class="status-light failed"></span>
-                <span>
-                  <span class="row-name">docs-site</span>
-                  <span class="row-meta">build failed on staging</span>
-                </span>
-                <span class="provider-pill">GitHub</span>
-              </div>
-            </div>
-            <div class="popover-footer">
-              <span>Refresh</span>
-              <span>Settings</span>
-              <span>Quit</span>
-            </div>
+        <div class="product-visual">
+          <div class="product-carousel" aria-label="DeployBar provider previews">
+            <img
+              class="product-screenshot"
+              src="assets/deploybar-provider-preview-1.png"
+              alt="DeployBar popover preview with mocked Vercel, Railway, and GitHub deployment rows."
+              width="1000"
+              height="1660"
+            >
+            <img
+              class="product-screenshot"
+              src="assets/deploybar-provider-preview-2.png"
+              alt="DeployBar popover preview with mocked Netlify, Render, and Cloudflare Pages deployment rows."
+              width="1000"
+              height="1660"
+            >
+            <img
+              class="product-screenshot"
+              src="assets/deploybar-provider-preview-3.png"
+              alt="DeployBar popover preview with mocked DigitalOcean, Heroku, and GitLab deployment rows."
+              width="1000"
+              height="1660"
+            >
+            <div class="product-carousel-dots" aria-hidden="true"><span></span><span></span><span></span></div>
           </div>
         </div>
       </section>

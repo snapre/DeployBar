@@ -29,10 +29,17 @@ struct DeploymentRowView: View {
                     commitLine
 
                     if let errorMessage = snapshot.errorMessage, snapshot.severity >= .critical {
-                        Text(errorMessage)
-                            .font(.caption2)
-                            .foregroundStyle(.red)
-                            .lineLimit(1)
+                        HStack(spacing: 5) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+                            Text(errorMessage)
+                                .lineLimit(1)
+                        }
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.red.opacity(0.10), in: RoundedRectangle(cornerRadius: 6))
                     }
                 }
             }
@@ -40,7 +47,7 @@ struct DeploymentRowView: View {
             .padding(.trailing, 14)
             .padding(.vertical, 13)
         }
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: minimumRowHeight, alignment: .leading)
         .background(rowBackground, in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -135,6 +142,10 @@ struct DeploymentRowView: View {
             return .secondary
         }
         return DeploymentSeverityStyle.color(for: snapshot.severity)
+    }
+
+    private var minimumRowHeight: CGFloat {
+        snapshot.errorMessage != nil && snapshot.severity >= .critical ? 122 : 96
     }
 
     private var timeSummary: String {

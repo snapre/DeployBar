@@ -8,6 +8,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let notificationDelegate = NotificationCenterDelegate()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if WebsiteScreenshotRenderer.renderIfRequested() {
+            return
+        }
+        #endif
+
         NSApp.setActivationPolicy(.accessory)
 
         let notificationCenter = UNUserNotificationCenter.current()

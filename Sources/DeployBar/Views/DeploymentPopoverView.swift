@@ -15,6 +15,7 @@ struct DeploymentPopoverView: View {
     static let preferredWidth: CGFloat = DeploymentPopoverLayout.preferredWidth
 
     @ObservedObject var store: DeploymentStore
+    var usesScrollView = true
     @Environment(\.openURL) private var openURL
     @Environment(\.openSettings) private var openSettings
 
@@ -31,19 +32,15 @@ struct DeploymentPopoverView: View {
                 )
                 .layoutPriority(1)
             } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        focusSummary
-
-                        ForEach(sectionedSnapshots) { section in
-                            SnapshotSection(title: section.title, snapshots: section.snapshots) { snapshot in
-                                open(snapshot)
-                            }
-                        }
+                if usesScrollView {
+                    ScrollView {
+                        snapshotContent
                     }
-                    .padding(12)
+                    .layoutPriority(1)
+                } else {
+                    snapshotContent
+                        .layoutPriority(1)
                 }
-                .layoutPriority(1)
             }
 
             if !store.issues.isEmpty {
@@ -59,6 +56,19 @@ struct DeploymentPopoverView: View {
             maxHeight: .infinity,
             alignment: .top
         )
+    }
+
+    private var snapshotContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            focusSummary
+
+            ForEach(sectionedSnapshots) { section in
+                SnapshotSection(title: section.title, snapshots: section.snapshots) { snapshot in
+                    open(snapshot)
+                }
+            }
+        }
+        .padding(12)
     }
 
     private var header: some View {
