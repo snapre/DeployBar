@@ -303,6 +303,11 @@
           url("assets/macos-desktop-wallpaper.jpg") center / cover no-repeat;
       }
 
+      .site-shell.hero {
+        width: 100%;
+        max-width: none;
+      }
+
       .hero::after {
         content: "";
         position: absolute;
@@ -319,6 +324,7 @@
       }
 
       .hero-copy {
+        z-index: 2;
         align-self: center;
         max-width: 560px;
         transform: translate(clamp(44px, 3.2vw, 74px), clamp(-156px, -13vh, -112px));
@@ -485,8 +491,10 @@
         top: 32px;
         right: clamp(48px, 8.6vw, 176px);
         width: clamp(318px, 23.5vw, 360px);
+        aspect-ratio: 840 / 1572;
         min-height: calc(100vh - 32px);
         animation: visual-rise 720ms 140ms both cubic-bezier(0.2, 0.72, 0.18, 1);
+        pointer-events: none;
       }
 
       .mac-desktop {
@@ -991,21 +999,38 @@
       @media (max-width: 900px) {
         .hero {
           grid-template-columns: 1fr;
-          gap: 38px;
-          padding-top: 74px;
+          min-height: 100vh;
+          min-height: 100svh;
+          gap: 0;
+          padding: 72px clamp(48px, 8vw, 72px) 56px;
         }
 
         .hero-copy {
+          max-width: min(520px, calc(100vw - clamp(288px, 34vw, 340px) - clamp(104px, 14vw, 148px)));
           transform: none;
         }
 
         .product-visual {
-          position: relative;
+          position: absolute;
           top: auto;
-          right: auto;
-          justify-self: center;
-          width: min(100%, 520px);
-          margin: 0 auto;
+          right: clamp(32px, 7vw, 80px);
+          bottom: clamp(-210px, -18vw, -140px);
+          justify-self: auto;
+          width: clamp(288px, 34vw, 320px);
+          min-height: 0;
+          margin: 0;
+        }
+
+        .mac-desktop {
+          height: 100%;
+          min-height: 0;
+        }
+
+        .mac-popover {
+          top: 0;
+          right: 0;
+          width: 100%;
+          transform: none;
         }
 
         h1 {
@@ -1081,12 +1106,28 @@
         }
 
         .hero {
-          min-height: auto;
-          padding: 72px 16px 34px;
-          padding-bottom: 34px;
+          width: 100%;
+          min-height: 100vh;
+          min-height: 100svh;
+          grid-template-columns: minmax(0, 1fr);
+          align-items: start;
+          padding: 64px 16px 28px;
           background:
             linear-gradient(180deg, rgba(246, 249, 243, 0.88) 0%, rgba(246, 249, 243, 0.58) 44%, rgba(246, 249, 243, 0.14) 100%),
             url("assets/macos-desktop-wallpaper.jpg") center top / cover no-repeat;
+        }
+
+        .hero-copy {
+          align-self: start;
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+        }
+
+        .actions,
+        .install-line,
+        .meta {
+          max-width: 100%;
         }
 
         :root[data-theme="dark"] .hero,
@@ -1109,30 +1150,38 @@
         }
 
         .install-line {
-          display: grid;
+          display: flex;
           width: 100%;
         }
 
         .install-line span {
-          border-right: 0;
-          border-bottom: 1px solid var(--line);
+          flex: none;
+          border-right: 1px solid var(--line);
+          border-bottom: 0;
+        }
+
+        .install-line code {
+          overflow: visible;
+          white-space: normal;
+          overflow-wrap: anywhere;
         }
 
         .product-visual {
-          width: min(100%, 430px);
-          min-height: 650px;
-          margin: 0 auto;
+          right: -72px;
+          bottom: -330px;
+          width: 300px;
         }
 
         .mac-desktop {
-          min-height: 650px;
+          height: 100%;
+          min-height: 0;
         }
 
         .mac-popover {
-          top: 8px;
-          right: 50%;
-          width: min(92vw, 370px);
-          transform: translateX(50%);
+          top: 0;
+          right: 0;
+          width: 100%;
+          transform: none;
         }
 
         .provider,
@@ -1152,6 +1201,27 @@
 
         section {
           padding: 52px 0;
+        }
+      }
+
+      @media (max-width: 360px) {
+        h1 {
+          font-size: 2.55rem;
+        }
+
+        .eyebrow {
+          gap: 7px;
+          font-size: 0.7rem;
+        }
+
+        .lead {
+          font-size: 1rem;
+        }
+
+        .product-visual {
+          right: -64px;
+          bottom: -315px;
+          width: 260px;
         }
       }
 
