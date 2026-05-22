@@ -580,9 +580,15 @@
         inset: 0;
         width: 100%;
         height: 100%;
-        object-fit: contain;
         opacity: 0;
         animation: preview-cycle 15s infinite;
+      }
+
+      .product-screenshot img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
 
       .product-screenshot:nth-child(2) {
@@ -1233,27 +1239,33 @@
           <div class="mac-desktop" aria-label="DeployBar running from the macOS menu bar">
             <div class="mac-popover">
               <div class="product-carousel" aria-label="DeployBar provider previews">
-                <img
-                  class="product-screenshot"
-                  src="assets/deploybar-provider-preview-1.png"
-                  alt="DeployBar popover preview with mocked Vercel, Railway, and GitHub deployment rows."
-                  width="840"
-                  height="1572"
-                >
-                <img
-                  class="product-screenshot"
-                  src="assets/deploybar-provider-preview-2.png"
-                  alt="DeployBar popover preview with mocked Netlify, Render, and Cloudflare Pages deployment rows."
-                  width="840"
-                  height="1572"
-                >
-                <img
-                  class="product-screenshot"
-                  src="assets/deploybar-provider-preview-3.png"
-                  alt="DeployBar popover preview with mocked DigitalOcean, Heroku, and GitLab deployment rows."
-                  width="840"
-                  height="1572"
-                >
+                <picture class="product-screenshot">
+                  <source srcset="assets/deploybar-provider-preview-1-dark.png" media="(prefers-color-scheme: dark)">
+                  <img
+                    src="assets/deploybar-provider-preview-1.png"
+                    alt="DeployBar popover preview with mocked Vercel, Railway, and GitHub deployment rows."
+                    width="840"
+                    height="1572"
+                  >
+                </picture>
+                <picture class="product-screenshot">
+                  <source srcset="assets/deploybar-provider-preview-2-dark.png" media="(prefers-color-scheme: dark)">
+                  <img
+                    src="assets/deploybar-provider-preview-2.png"
+                    alt="DeployBar popover preview with mocked Netlify, Render, and Cloudflare Pages deployment rows."
+                    width="840"
+                    height="1572"
+                  >
+                </picture>
+                <picture class="product-screenshot">
+                  <source srcset="assets/deploybar-provider-preview-3-dark.png" media="(prefers-color-scheme: dark)">
+                  <img
+                    src="assets/deploybar-provider-preview-3.png"
+                    alt="DeployBar popover preview with mocked DigitalOcean, Heroku, and GitLab deployment rows."
+                    width="840"
+                    height="1572"
+                  >
+                </picture>
                 <div class="product-carousel-dots" aria-hidden="true"><span></span><span></span><span></span></div>
               </div>
             </div>

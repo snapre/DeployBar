@@ -35,7 +35,12 @@ enum WebsiteScreenshotRenderer {
 
         do {
             let now = Date()
-            try render(group: WebsitePreviewFixture.groups(now: now)[0], updatedAt: now, to: URL(fileURLWithPath: arguments[flagIndex + 1]))
+            try render(
+                group: WebsitePreviewFixture.groups(now: now)[0],
+                appearance: .light,
+                updatedAt: now,
+                to: URL(fileURLWithPath: arguments[flagIndex + 1])
+            )
             exit(EXIT_SUCCESS)
         } catch {
             fputs("Could not render website screenshot: \(error)\n", stderr)
@@ -48,22 +53,30 @@ enum WebsiteScreenshotRenderer {
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
 
         for group in WebsitePreviewFixture.groups(now: now) {
-            try render(
-                group: group,
-                updatedAt: now,
-                to: outputDirectory.appendingPathComponent(group.filename)
-            )
+            for appearance in WebsitePreviewAppearance.allCases {
+                try render(
+                    group: group,
+                    appearance: appearance,
+                    updatedAt: now,
+                    to: outputDirectory.appendingPathComponent(group.filename(for: appearance))
+                )
+            }
         }
     }
 
-    private static func render(group: WebsitePreviewGroup, updatedAt: Date, to outputURL: URL) throws {
+    private static func render(
+        group: WebsitePreviewGroup,
+        appearance: WebsitePreviewAppearance,
+        updatedAt: Date,
+        to outputURL: URL
+    ) throws {
         let store = DeploymentStore(
             settingsStore: SettingsStore(settingsURL: FileManager.default.temporaryDirectory.appendingPathComponent("deploybar-website-preview-\(group.index)-settings.json"))
         )
         store.loadWebsitePreview(snapshots: group.snapshots, lastRefreshAt: updatedAt)
 
         let view = WebsitePopoverScreenshot(store: store)
-        .environment(\.colorScheme, .light)
+            .environment(\.colorScheme, appearance.colorScheme)
 
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
@@ -90,6 +103,29 @@ private struct WebsitePreviewGroup {
     var index: Int
     var filename: String
     var snapshots: [DeploymentSnapshot]
+
+    func filename(for appearance: WebsitePreviewAppearance) -> String {
+        switch appearance {
+        case .light:
+            return filename
+        case .dark:
+            return "deploybar-provider-preview-\(index)-dark.png"
+        }
+    }
+}
+
+private enum WebsitePreviewAppearance: CaseIterable {
+    case light
+    case dark
+
+    var colorScheme: ColorScheme {
+        switch self {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
 }
 
 private struct WebsitePopoverScreenshot: View {
