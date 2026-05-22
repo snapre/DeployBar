@@ -90,22 +90,24 @@ jobs:
           codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
           codesign -dv --verbose=4 .build/DeployBar.app
 
-      - name: Notarize app
-        timeout-minutes: 70
+      - name: Submit app for notarization
+        id: notarization
         env:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if [[ -z "$APPLE_ID" || -z "$APPLE_APP_SPECIFIC_PASSWORD" || -z "$APPLE_TEAM_ID" ]]; then
             echo "Missing Apple notarization secrets." >&2
             exit 1
           fi
 
-          NOTARY_ZIP="$RUNNER_TEMP/DeployBar-notary.zip"
-          ditto -c -k --keepParent .build/DeployBar.app "$NOTARY_ZIP"
+          mkdir -p dist notarization
+          SIGNED_ZIP="dist/DeployBar-${VERSION}-macOS-signed.zip"
+          ditto -c -k --keepParent .build/DeployBar.app "$SIGNED_ZIP"
 
-          SUBMISSION_JSON="$(xcrun notarytool submit "$NOTARY_ZIP" \
+          SUBMISSION_JSON="$(xcrun notarytool submit "$SIGNED_ZIP" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
@@ -113,63 +115,32 @@ jobs:
           echo "$SUBMISSION_JSON"
 
           SUBMISSION_ID="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')"
-          DEADLINE=$((SECONDS + 3600))
+          printf '%s\n' "$SUBMISSION_JSON" > notarization/submission.json
+          printf '%s\n' "$SUBMISSION_ID" > notarization/submission-id.txt
+          printf '%s\n' "${{ steps.version.outputs.tag_name }}" > notarization/tag-name.txt
+          printf '%s\n' "$VERSION" > notarization/version.txt
 
-          while true; do
-            INFO_JSON="$(xcrun notarytool info "$SUBMISSION_ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" \
-              --output-format json)"
-            STATUS="$(printf '%s' "$INFO_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["status"])')"
-            echo "Notarization status: $STATUS"
+          echo "submission_id=$SUBMISSION_ID" >> "$GITHUB_OUTPUT"
+          echo "Submitted notarization request $SUBMISSION_ID. Run the Finish Notarization workflow after Apple marks it Accepted."
 
-            case "$STATUS" in
-              Accepted)
-                break
-                ;;
-              Invalid|Rejected)
-                xcrun notarytool log "$SUBMISSION_ID" \
-                  --apple-id "$APPLE_ID" \
-                  --password "$APPLE_APP_SPECIFIC_PASSWORD" \
-                  --team-id "$APPLE_TEAM_ID" || true
-                exit 1
-                ;;
-            esac
-
-            if (( SECONDS >= DEADLINE )); then
-              echo "Timed out waiting for notarization submission $SUBMISSION_ID." >&2
-              exit 1
-            fi
-
-            sleep 30
-          done
-
-          xcrun stapler staple .build/DeployBar.app
-          xcrun stapler validate .build/DeployBar.app
-          spctl --assess --type execute --verbose=4 .build/DeployBar.app
-
-      - name: Archive app
-        run: |
-          mkdir -p dist
-          ditto -c -k --keepParent .build/DeployBar.app "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip"
-          shasum -a 256 "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip" > "dist/DeployBar-${{ steps.version.outputs.version }}-macOS.zip.sha256"
-
-      - name: Upload workflow artifact
+      - name: Upload signed artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DeployBar-${{ steps.version.outputs.version }}-macOS
-          path: dist/*
+          name: DeployBar-${{ steps.version.outputs.tag_name }}-signed
+          path: |
+            dist/DeployBar-${{ steps.version.outputs.version }}-macOS-signed.zip
+            notarization/*
           if-no-files-found: error
 
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ steps.version.outputs.tag_name }}
-          VERSION: ${{ steps.version.outputs.version }}
+      - name: Summary
         run: |
-          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" dist/* --clobber
-          else
-            gh release create "$TAG_NAME" dist/* --title "DeployBar $VERSION" --generate-notes
-          fi
+          {
+            echo "### Notarization submitted"
+            echo
+            echo "- Tag: \`${{ steps.version.outputs.tag_name }}\`"
+            echo "- Source run ID: \`${{ github.run_id }}\`"
+            echo "- Submission ID: \`${{ steps.notarization.outputs.submission_id }}\`"
+            echo "- Signed artifact: \`DeployBar-${{ steps.version.outputs.tag_name }}-signed\`"
+            echo
+            echo "Run the **Finish Notarization** workflow with this run ID after Apple accepts the submission."
+          } >> "$GITHUB_STEP_SUMMARY"
