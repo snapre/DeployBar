@@ -10,14 +10,19 @@ final class MenuBarController {
     private let store: DeploymentStore
     private var cancellable: AnyCancellable?
 
-    init(store: DeploymentStore) {
+    init(store: DeploymentStore, openSettings: @escaping (SettingsTab) -> Void) {
         self.store = store
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         popover.behavior = .transient
         let initialSize = preferredPopoverSize(relativeTo: nil)
         popover.contentSize = initialSize
-        let contentViewController = NSHostingController(rootView: DeploymentPopoverView(store: store))
+        let contentViewController = NSHostingController(
+            rootView: DeploymentPopoverView(store: store) { [weak self] tab in
+                self?.popover.performClose(nil)
+                openSettings(tab)
+            }
+        )
         contentViewController.preferredContentSize = initialSize
         popover.contentViewController = contentViewController
 

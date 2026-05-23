@@ -18,6 +18,7 @@ struct DeploymentPopoverView: View {
 
     @ObservedObject var store: DeploymentStore
     var usesScrollView = true
+    var openSettings: (SettingsTab) -> Void = { _ in }
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -28,7 +29,7 @@ struct DeploymentPopoverView: View {
             if store.snapshots.isEmpty {
                 PopoverEmptyState(
                     hasAccounts: store.hasConfiguredAccounts,
-                    onOpenSettings: openSettingsWindow,
+                    onOpenSettings: { openSettingsWindow(tab: .providers) },
                     onRefresh: { store.refresh(manual: true) }
                 )
                 .layoutPriority(1)
@@ -108,11 +109,10 @@ struct DeploymentPopoverView: View {
                     store.refresh(manual: true)
                 }
                 FooterActionRow(title: "Settings...", systemImage: "gearshape", shortcut: "⌘,", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                    openSettingsWindow()
+                    openSettingsWindow(tab: .providers)
                 }
                 FooterActionRow(title: "About DeployBar", systemImage: "info.circle", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
-                    UserDefaults.standard.set(SettingsTab.about.rawValue, forKey: SettingsTab.storageKey)
-                    openSettingsWindow()
+                    openSettingsWindow(tab: .about)
                 }
                 FooterActionRow(title: "Quit", systemImage: "power", shortcut: "⌘Q", accentColor: DeploymentSeverityStyle.color(for: store.globalSeverity)) {
                     NSApp.terminate(nil)
@@ -248,11 +248,8 @@ struct DeploymentPopoverView: View {
         }
     }
 
-    private func openSettingsWindow() {
-        NSApp.activate(ignoringOtherApps: true)
-        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        }
+    private func openSettingsWindow(tab: SettingsTab) {
+        openSettings(tab)
     }
 
 }

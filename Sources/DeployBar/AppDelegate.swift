@@ -5,6 +5,7 @@ import UserNotifications
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let store = DeploymentStore()
     private var menuBarController: MenuBarController?
+    private var settingsWindowController: SettingsWindowController?
     private let notificationDelegate = NotificationCenterDelegate()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -22,7 +23,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
         }
 
-        menuBarController = MenuBarController(store: store)
+        let settingsWindowController = SettingsWindowController(store: store)
+        self.settingsWindowController = settingsWindowController
+        menuBarController = MenuBarController(store: store) { tab in
+            settingsWindowController.show(tab: tab)
+        }
         store.start()
     }
 
