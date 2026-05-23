@@ -161,3 +161,13 @@ DeployBar is local-first. Tokens are never written to JSON settings, logs, or di
 ## Attribution
 
 DeployBar is inspired by the product shape and provider architecture ideas in [steipete/CodexBar](https://github.com/steipete/CodexBar), which is MIT licensed. No CodexBar source code is copied in this scaffold.
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=snapre%2FDeployBar&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=snapre/DeployBar&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=snapre/DeployBar&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=snapre/DeployBar&type=date&legend=top-left" />
+ </picture>
+</a>
