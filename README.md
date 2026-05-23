@@ -58,6 +58,8 @@ Run directly from SwiftPM:
 swift run DeployBar
 ```
 
+AI-assisted contributors can use [AGENT.md](AGENT.md) for project boundaries, architecture notes, and review expectations.
+
 Package a local `.app` bundle with `LSUIElement` and the DeployBar icon enabled:
 
 ```bash
