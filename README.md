@@ -2,6 +2,8 @@
 
 DeployBar is a free, open-source, local-first macOS menu bar app for watching cloud deployment status across providers such as Vercel and Railway.
 
+![DeployBar website first screen](docs/assets/deploybar-index-first-screen.png)
+
 The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration. There is no Electron shell and no backend service.
 
 ## Trust model
@@ -33,11 +35,10 @@ The next implementation phase is deeper provider diagnostics, optional failure l
 
 ## Installation
 
-Install the latest signed and notarized release with Homebrew:
+Install the latest signed and notarized release with Homebrew Cask:
 
 ```bash
-brew tap snapre/tap
-brew install --cask deploybar
+brew install --cask snapre/tap/deploybar
 ```
 
 ## Development
