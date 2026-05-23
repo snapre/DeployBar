@@ -998,27 +998,43 @@
 
       @media (max-width: 900px) {
         .hero {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr);
           min-height: 100vh;
           min-height: 100svh;
-          gap: 0;
-          padding: 72px clamp(48px, 8vw, 72px) 56px;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 28px;
+          padding: 56px 0 58px;
+          background:
+            linear-gradient(90deg, rgba(5, 28, 42, 0.28) 0%, rgba(5, 28, 42, 0.08) 48%, rgba(5, 28, 42, 0.02) 100%),
+            linear-gradient(180deg, rgba(246, 249, 243, 0.02) 0%, rgba(246, 249, 243, 0.08) 50%, rgba(7, 16, 13, 0.24) 100%),
+            url("assets/macos-desktop-wallpaper.jpg") 64% top / cover no-repeat;
+        }
+
+        .hero::after {
+          height: 45%;
+          background: linear-gradient(180deg, transparent, rgba(7, 16, 13, 0.36));
         }
 
         .hero-copy {
-          max-width: min(520px, calc(100vw - clamp(288px, 34vw, 340px) - clamp(104px, 14vw, 148px)));
+          order: 2;
+          width: min(560px, calc(100% - 48px));
+          max-width: none;
+          margin: 0 auto;
           transform: none;
         }
 
         .product-visual {
-          position: absolute;
+          position: relative;
+          order: 1;
           top: auto;
-          right: clamp(32px, 7vw, 80px);
-          bottom: clamp(-210px, -18vw, -140px);
+          right: auto;
+          bottom: auto;
           justify-self: auto;
-          width: clamp(288px, 34vw, 320px);
+          width: clamp(340px, 56vw, 460px);
           min-height: 0;
-          margin: 0;
+          margin: 0 0 0 clamp(32px, 9vw, 86px);
         }
 
         .mac-desktop {
@@ -1059,6 +1075,14 @@
         .system-status-icon.spotlight {
           display: none;
         }
+
+        :root[data-theme="dark"] .hero,
+        :root[data-theme="system"][data-resolved-theme="dark"] .hero {
+          background:
+            linear-gradient(90deg, rgba(3, 12, 18, 0.42) 0%, rgba(3, 12, 18, 0.16) 52%, rgba(3, 12, 18, 0.04) 100%),
+            linear-gradient(180deg, rgba(5, 12, 15, 0.04) 0%, rgba(5, 12, 15, 0.16) 50%, rgba(4, 8, 10, 0.48) 100%),
+            url("assets/macos-desktop-wallpaper.jpg") 64% top / cover no-repeat;
+        }
       }
 
       @media (max-width: 620px) {
@@ -1067,42 +1091,86 @@
         }
 
         .nav {
+          height: 32px;
           min-height: 32px;
+          align-items: center;
+          justify-content: space-between;
           padding: 0 10px;
-          gap: 10px;
+          gap: 8px;
+        }
+
+        .menu-left {
+          min-width: 0;
+          max-width: 126px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          overflow: hidden;
+          flex: none;
+        }
+
+        .apple-menu,
+        .brand {
+          height: 32px;
+          line-height: 32px;
+        }
+
+        .apple-menu {
+          font-size: 20px;
         }
 
         .brand {
-          width: fit-content;
-          font-size: 0.82rem;
+          width: auto;
+          min-width: 0;
+          overflow: hidden;
+          font-size: 0.92rem;
+          font-weight: 700;
+          text-overflow: clip;
+          white-space: nowrap;
         }
 
-        .nav-links a:nth-child(n + 2),
-        .system-status-icon.control-center,
-        .system-status-icon.battery,
-        .system-status-icon.spotlight {
+        .nav-links {
           display: none;
         }
 
         .nav-controls {
           min-width: 0;
-          gap: 8px;
+          height: 32px;
+          justify-content: flex-end;
+          flex: 1 1 auto;
+          padding: 0;
+          gap: 0;
         }
 
-        .nav-links {
-          justify-content: flex-start;
-          flex-wrap: nowrap;
+        .menu-status {
+          width: auto;
           min-width: 0;
+          height: 32px;
+          justify-content: flex-end;
+          gap: clamp(7px, 2.6vw, 12px);
+          overflow: hidden;
+          font-size: clamp(11px, 3.05vw, 13px);
         }
 
-        .menu-status time,
+        .menu-status time {
+          display: block;
+          flex: 0 1 auto;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-weight: 700;
+        }
+
         .system-status-icon.wifi {
-          display: none;
+          display: block;
         }
 
-        .nav-links a {
-          padding: 3px 6px;
-          font-size: 0.74rem;
+        .system-status-icon.battery,
+        .system-status-icon.control-center,
+        .system-status-icon.spotlight {
+          display: none;
         }
 
         .hero {
@@ -1110,18 +1178,35 @@
           min-height: 100vh;
           min-height: 100svh;
           grid-template-columns: minmax(0, 1fr);
+          display: flex;
+          flex-direction: column;
           align-items: start;
-          padding: 64px 16px 28px;
+          gap: 16px;
+          padding: 34px 0 36px;
           background:
-            linear-gradient(180deg, rgba(246, 249, 243, 0.88) 0%, rgba(246, 249, 243, 0.58) 44%, rgba(246, 249, 243, 0.14) 100%),
-            url("assets/macos-desktop-wallpaper.jpg") center top / cover no-repeat;
+            linear-gradient(90deg, rgba(5, 28, 42, 0.30) 0%, rgba(5, 28, 42, 0.10) 48%, rgba(5, 28, 42, 0.03) 100%),
+            linear-gradient(180deg, rgba(246, 249, 243, 0.00) 0%, rgba(246, 249, 243, 0.06) 50%, rgba(7, 16, 13, 0.34) 100%),
+            url("assets/macos-desktop-wallpaper.jpg") 66% top / cover no-repeat;
+        }
+
+        .hero::after {
+          height: 58%;
+          background:
+            linear-gradient(180deg, transparent 0%, rgba(4, 15, 12, 0.36) 28%, rgba(4, 15, 12, 0.72) 100%);
         }
 
         .hero-copy {
+          order: 2;
           align-self: start;
-          width: 100%;
+          width: calc(100% - 32px);
           min-width: 0;
           max-width: none;
+          margin: 0 auto;
+          color: #ffffff;
+        }
+
+        .eyebrow {
+          display: none;
         }
 
         .actions,
@@ -1133,43 +1218,117 @@
         :root[data-theme="dark"] .hero,
         :root[data-theme="system"][data-resolved-theme="dark"] .hero {
           background:
-            linear-gradient(180deg, rgba(5, 12, 15, 0.88) 0%, rgba(5, 12, 15, 0.62) 48%, rgba(5, 12, 15, 0.24) 100%),
-            url("assets/macos-desktop-wallpaper.jpg") center top / cover no-repeat;
+            linear-gradient(90deg, rgba(3, 12, 18, 0.44) 0%, rgba(3, 12, 18, 0.18) 52%, rgba(3, 12, 18, 0.05) 100%),
+            linear-gradient(180deg, rgba(5, 12, 15, 0.02) 0%, rgba(5, 12, 15, 0.16) 50%, rgba(4, 8, 10, 0.56) 100%),
+            url("assets/macos-desktop-wallpaper.jpg") 66% top / cover no-repeat;
         }
 
-        h1 {
-          font-size: 2.85rem;
+        .hero h1 {
+          margin-bottom: 10px;
+          color: #ffffff;
+          font-size: 2.5rem;
+          text-shadow: 0 2px 22px rgba(0, 0, 0, 0.52);
         }
 
         h2 {
           font-size: 2rem;
         }
 
-        .lead {
-          font-size: 1.05rem;
+        .hero .lead {
+          margin-bottom: 18px;
+          color: rgba(255, 255, 255, 0.92);
+          font-size: 1rem;
+          text-shadow: 0 1px 18px rgba(0, 0, 0, 0.50);
         }
 
-        .install-line {
+        .actions {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+
+        .button {
+          width: 100%;
+          min-height: 48px;
+        }
+
+        .hero .button.primary {
+          border-color: rgba(255, 255, 255, 0.86);
+          background: rgba(255, 255, 255, 0.94);
+          color: #07110d;
+          box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+        }
+
+        .hero .button.secondary {
+          border-color: rgba(255, 255, 255, 0.30);
+          background: rgba(5, 13, 10, 0.22);
+          color: #ffffff;
+          backdrop-filter: blur(16px) saturate(1.1);
+        }
+
+        .hero .install-line {
           display: flex;
           width: 100%;
+          border-color: rgba(255, 255, 255, 0.26);
+          background: rgba(8, 18, 14, 0.42);
+          color: #ffffff;
+          backdrop-filter: blur(16px) saturate(1.1);
         }
 
-        .install-line span {
+        .hero .install-line span {
           flex: none;
-          border-right: 1px solid var(--line);
+          border-right: 1px solid rgba(255, 255, 255, 0.26);
           border-bottom: 0;
+          color: rgba(255, 255, 255, 0.68);
         }
 
-        .install-line code {
+        .hero .install-line code {
           overflow: visible;
+          color: #ffffff;
+          font-size: 0.78rem;
           white-space: normal;
           overflow-wrap: anywhere;
         }
 
+        .hero .meta {
+          color: rgba(255, 255, 255, 0.76);
+          text-shadow: 0 1px 18px rgba(0, 0, 0, 0.50);
+        }
+
+        :root[data-theme="dark"] .hero::after,
+        :root[data-theme="system"][data-resolved-theme="dark"] .hero::after {
+          background:
+            linear-gradient(180deg, transparent 0%, rgba(1, 7, 6, 0.48) 26%, rgba(1, 7, 6, 0.84) 100%);
+        }
+
+        :root[data-theme="dark"] .hero .button.primary,
+        :root[data-theme="system"][data-resolved-theme="dark"] .hero .button.primary {
+          border-color: rgba(255, 255, 255, 0.78);
+          background: rgba(243, 249, 245, 0.92);
+          color: #06100c;
+        }
+
+        :root[data-theme="dark"] .hero .button.secondary,
+        :root[data-theme="system"][data-resolved-theme="dark"] .hero .button.secondary,
+        :root[data-theme="dark"] .hero .install-line,
+        :root[data-theme="system"][data-resolved-theme="dark"] .hero .install-line {
+          border-color: rgba(255, 255, 255, 0.22);
+          background: rgba(0, 6, 5, 0.52);
+        }
+
         .product-visual {
-          right: -72px;
-          bottom: -330px;
-          width: 300px;
+          order: 1;
+          position: relative;
+          top: auto;
+          right: auto;
+          bottom: auto;
+          width: min(68vw, 300px);
+          margin: 0 clamp(30px, 8vw, 48px) 0 auto;
+        }
+
+        .product-carousel {
+          filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.30));
         }
 
         .mac-desktop {
@@ -1205,8 +1364,8 @@
       }
 
       @media (max-width: 360px) {
-        h1 {
-          font-size: 2.55rem;
+        .hero h1 {
+          font-size: 2.2rem;
         }
 
         .eyebrow {
@@ -1219,9 +1378,8 @@
         }
 
         .product-visual {
-          right: -64px;
-          bottom: -315px;
-          width: 260px;
+          width: min(66vw, 250px);
+          margin-right: 24px;
         }
       }
 
