@@ -46,6 +46,15 @@ jobs:
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Check Homebrew tap token
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [[ -z "$HOMEBREW_TAP_TOKEN" ]]; then
+            echo "Missing HOMEBREW_TAP_TOKEN. Add a fine-grained token with Contents read/write access to snapre/homebrew-tap." >&2
+            exit 1
+          fi
+
       - name: Test
         run: swift test
 
@@ -105,8 +114,9 @@ jobs:
           security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db" || true
           codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
 
-      - name: Submit app for notarization
+      - name: Notarize app
         id: notarization
+        timeout-minutes: 100
         env:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -118,47 +128,141 @@ jobs:
             exit 1
           fi
 
-          mkdir -p dist notarization
-          SIGNED_ZIP="dist/DeployBar-${VERSION}-macOS-signed.zip"
+          mkdir -p dist
+          SIGNED_ZIP="$RUNNER_TEMP/DeployBar-${VERSION}-macOS-signed.zip"
           ditto -c -k --keepParent .build/DeployBar.app "$SIGNED_ZIP"
           VERIFY_DIR="$(mktemp -d)"
           ditto -x -k "$SIGNED_ZIP" "$VERIFY_DIR"
           codesign --verify --deep --strict --verbose=2 "$VERIFY_DIR/DeployBar.app"
 
+          NOTARY_LOG="$RUNNER_TEMP/notarytool-submit.log"
+          set +e
           SUBMISSION_JSON="$(xcrun notarytool submit "$SIGNED_ZIP" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --output-format json)"
+            --wait \
+            --timeout 90m \
+            --output-format json 2> "$NOTARY_LOG")"
+          NOTARY_EXIT=$?
+          set -e
+          if [[ -s "$NOTARY_LOG" ]]; then
+            cat "$NOTARY_LOG" >&2
+          fi
           echo "$SUBMISSION_JSON"
 
-          SUBMISSION_ID="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin)["id"])')"
-          printf '%s\n' "$SUBMISSION_JSON" > notarization/submission.json
-          printf '%s\n' "$SUBMISSION_ID" > notarization/submission-id.txt
-          printf '%s\n' "${{ steps.version.outputs.tag_name }}" > notarization/tag-name.txt
-          printf '%s\n' "$VERSION" > notarization/version.txt
+          SUBMISSION_ID="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("id", ""))' 2>/dev/null || true)"
+          STATUS="$(printf '%s' "$SUBMISSION_JSON" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("status", ""))' 2>/dev/null || true)"
 
           echo "submission_id=$SUBMISSION_ID" >> "$GITHUB_OUTPUT"
-          echo "Submitted notarization request $SUBMISSION_ID. Run the Finish Notarization workflow after Apple marks it Accepted."
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
 
-      - name: Upload signed artifact
+          if [[ "$NOTARY_EXIT" -ne 0 ]]; then
+            if [[ -n "$SUBMISSION_ID" ]]; then
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" || true
+            fi
+            exit "$NOTARY_EXIT"
+          fi
+
+          case "$STATUS" in
+            Accepted)
+              ;;
+            Invalid|Rejected)
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" || true
+              exit 1
+              ;;
+            *)
+              echo "Unexpected notarization status: ${STATUS:-unknown}" >&2
+              exit 1
+              ;;
+          esac
+
+          xcrun stapler staple .build/DeployBar.app
+          xcrun stapler validate .build/DeployBar.app
+          spctl --assess --type execute --verbose=4 .build/DeployBar.app
+
+          ditto -c -k --keepParent .build/DeployBar.app "dist/DeployBar-${VERSION}-macOS.zip"
+          shasum -a 256 "dist/DeployBar-${VERSION}-macOS.zip" > "dist/DeployBar-${VERSION}-macOS.zip.sha256"
+
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DeployBar-${{ steps.version.outputs.tag_name }}-signed
-          path: |
-            dist/DeployBar-${{ steps.version.outputs.version }}-macOS-signed.zip
-            notarization/*
+          name: DeployBar-${{ steps.version.outputs.version }}-macOS
+          path: dist/*
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.version.outputs.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG_NAME" dist/* --title "DeployBar $VERSION" --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Update Homebrew tap
+        id: homebrew
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TAP_REPO="snapre/homebrew-tap"
+          TAP_BRANCH="main"
+          CASK_PATH="Casks/deploybar.rb"
+          FINAL_ZIP="dist/DeployBar-${VERSION}-macOS.zip"
+          TAP_FILE_URL="https://github.com/${TAP_REPO}/blob/${TAP_BRANCH}/${CASK_PATH}"
+
+          SHA256="$(shasum -a 256 "$FINAL_ZIP" | awk '{print $1}')"
+          ENCODED_CASK="$RUNNER_TEMP/deploybar-cask.b64"
+          ORIGINAL_CASK="$RUNNER_TEMP/deploybar-cask.original.rb"
+          UPDATED_CASK="$RUNNER_TEMP/deploybar-cask.rb"
+
+          gh api "repos/${TAP_REPO}/contents/${CASK_PATH}" --jq '.content' > "$ENCODED_CASK"
+          base64 -D < "$ENCODED_CASK" > "$UPDATED_CASK"
+          cp "$UPDATED_CASK" "$ORIGINAL_CASK"
+
+          VERSION="$VERSION" SHA256="$SHA256" ruby -pi -e 'version = ENV.fetch("VERSION"); sha256 = ENV.fetch("SHA256"); $_ = "  version \"#{version}\"\n" if $_.match?(/^  version "/); $_ = "  sha256 \"#{sha256}\"\n" if $_.match?(/^  sha256 "/)' "$UPDATED_CASK"
+
+          grep -q "  version \"${VERSION}\"" "$UPDATED_CASK"
+          grep -q "  sha256 \"${SHA256}\"" "$UPDATED_CASK"
+
+          echo "file_url=$TAP_FILE_URL" >> "$GITHUB_OUTPUT"
+          if cmp -s "$ORIGINAL_CASK" "$UPDATED_CASK"; then
+            echo "result=already up to date" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CURRENT_SHA="$(gh api "repos/${TAP_REPO}/contents/${CASK_PATH}" --jq '.sha')"
+          CONTENT="$(base64 < "$UPDATED_CASK" | tr -d '\n')"
+          COMMIT_URL="$(gh api \
+            --method PUT \
+            "repos/${TAP_REPO}/contents/${CASK_PATH}" \
+            -f message="Update DeployBar to v${VERSION}" \
+            -f content="$CONTENT" \
+            -f sha="$CURRENT_SHA" \
+            -f branch="$TAP_BRANCH" \
+            --jq '.commit.html_url')"
+
+          echo "result=updated" >> "$GITHUB_OUTPUT"
+          echo "commit_url=$COMMIT_URL" >> "$GITHUB_OUTPUT"
 
       - name: Summary
         run: |
           {
-            echo "### Notarization submitted"
+            echo "### Release published"
             echo
             echo "- Tag: \`${{ steps.version.outputs.tag_name }}\`"
-            echo "- Source run ID: \`${{ github.run_id }}\`"
-            echo "- Submission ID: \`${{ steps.notarization.outputs.submission_id }}\`"
-            echo "- Signed artifact: \`DeployBar-${{ steps.version.outputs.tag_name }}-signed\`"
-            echo
-            echo "Run the **Finish Notarization** workflow with this run ID after Apple accepts the submission."
+            echo "- Notarization submission: \`${{ steps.notarization.outputs.submission_id }}\`"
+            echo "- Status: \`${{ steps.notarization.outputs.status }}\`"
+            echo "- Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag_name }}"
+            echo "- Homebrew tap: ${{ steps.homebrew.outputs.result }} (${{ steps.homebrew.outputs.file_url }})"
           } >> "$GITHUB_STEP_SUMMARY"
