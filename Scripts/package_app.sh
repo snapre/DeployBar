@@ -4,9 +4,34 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
+resolve_git_version() {
+  local tag
+
+  tag="$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || true)"
+  if [[ -n "$tag" ]]; then
+    printf '%s\n' "${tag#v}"
+    return
+  fi
+
+  echo "Unable to resolve DeployBar version from Git tags. Set DEPLOYBAR_VERSION explicitly." >&2
+  return 1
+}
+
+resolve_git_build_number() {
+  local commit_count
+
+  commit_count="$(git rev-list --count HEAD 2>/dev/null || true)"
+  if [[ -n "$commit_count" ]]; then
+    printf '%s\n' "$commit_count"
+    return
+  fi
+
+  printf '1\n'
+}
+
 CONFIGURATION="${DEPLOYBAR_BUILD_CONFIGURATION:-debug}"
-APP_VERSION="${DEPLOYBAR_VERSION:-0.1.0}"
-BUILD_NUMBER="${DEPLOYBAR_BUILD_NUMBER:-1}"
+APP_VERSION="${DEPLOYBAR_VERSION:-$(resolve_git_version)}"
+BUILD_NUMBER="${DEPLOYBAR_BUILD_NUMBER:-$(resolve_git_build_number)}"
 BUILD_ARCHS_VALUE="${DEPLOYBAR_BUILD_ARCHS-arm64 x86_64}"
 IFS=' ' read -r -a BUILD_ARCHS <<< "$BUILD_ARCHS_VALUE"
 
@@ -101,4 +126,15 @@ if command -v codesign >/dev/null 2>&1; then
   fi
 fi
 
-echo "Built $APP_DIR"
+if [[ "${DEPLOYBAR_PACKAGE_ZIP:-1}" == "1" ]]; then
+  DIST_DIR="${DEPLOYBAR_DIST_DIR:-$ROOT_DIR/dist}"
+  ZIP_PATH="$DIST_DIR/DeployBar-${APP_VERSION}-macOS.zip"
+
+  mkdir -p "$DIST_DIR"
+  rm -f "$ZIP_PATH" "$ZIP_PATH.sha256"
+  ditto -c -k --keepParent "$APP_DIR" "$ZIP_PATH"
+  shasum -a 256 "$ZIP_PATH" > "$ZIP_PATH.sha256"
+  echo "Packaged $ZIP_PATH (version $APP_VERSION, build $BUILD_NUMBER)"
+fi
+
+echo "Built $APP_DIR (version $APP_VERSION, build $BUILD_NUMBER)"
