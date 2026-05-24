@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="DeployBar is a local-first macOS menu bar app for watching cloud deployment status across Vercel, Railway, Netlify, Render, Cloudflare Pages, GitHub, GitLab, and more."
+      content="DeployBar replaces the deployment-dashboard checking loop with one local-first macOS menu bar status. Install the signed public launch build with Homebrew."
     >
     <meta name="theme-color" content="#f5f7f0">
-    <title>DeployBar - deployment status in your menu bar</title>
+    <title>DeployBar - stop checking deployment dashboards</title>
     <link rel="icon" href="assets/deploybar-icon.png">
     <script>
       (() => {
@@ -1447,10 +1447,10 @@
     <main id="top">
       <section class="site-shell hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <div class="eyebrow">Local-first macOS deployment watch</div>
+          <div class="eyebrow">First public launch - local-first Mac app</div>
           <h1 id="hero-title">DeployBar</h1>
           <p class="lead">
-            A native menu bar app for watching cloud deployments across Vercel, Railway, GitHub, GitLab, Heroku, Netlify, Render, Cloudflare Pages, and DigitalOcean without opening every dashboard.
+            Hit deploy and get back to work. DeployBar watches the deployment dashboards you used to keep open and turns them into one quiet macOS menu bar status, with native alerts when a build ships, fails, cancels, or disappears.
           </p>
           <div class="actions">
             <a class="button primary" href="#install">Install with Homebrew</a>
@@ -1460,7 +1460,7 @@
             <span>Install</span>
             <code>brew install --cask snapre/tap/deploybar</code>
           </div>
-          <p class="meta">Free and open source &middot; macOS 13+ &middot; Universal Mac app &middot; no backend service</p>
+          <p class="meta">Free and open source &middot; signed and notarized &middot; Homebrew Cask &middot; no DeployBar backend</p>
         </div>
 
         <div class="product-visual">
@@ -1503,9 +1503,9 @@
 
       <section id="providers" class="site-shell" aria-labelledby="providers-title">
         <div class="section-heading">
-          <h2 id="providers-title">Deployment providers, one menu bar.</h2>
+          <h2 id="providers-title">One place for the dashboards you used to check.</h2>
           <p>
-            DeployBar keeps provider-specific polling and discovery behind a unified status model, so each service can show the same clean snapshot in the popover.
+            For the first public release, provider coverage is broad enough for real split-stack projects. The point is not the logo count; it is that every provider is normalized into the same clean snapshot so you can stop bouncing between tabs.
           </p>
         </div>
         <div class="provider-grid">
@@ -1578,19 +1578,19 @@
       <section id="features" class="feature-band" aria-labelledby="features-title">
         <div class="site-shell">
           <div class="section-heading">
-            <h2 id="features-title">Built for quiet deployment awareness.</h2>
+            <h2 id="features-title">Built for the quiet after deploy.</h2>
             <p>
-              The app favors local state, provider-level isolation, and a compact native interface that stays useful during repeated deploy cycles.
+              Keep the deploy loop visible without making it your main task. DeployBar stays native, local, and small enough for repeated shipping days.
             </p>
           </div>
           <div class="feature-grid">
             <div class="feature">
               <h3>Focused snapshots</h3>
-              <p>Active, waiting, failed, and healthy deployments roll up into one readable status.</p>
+              <p>Active, waiting, failed, and healthy deployments roll up into one readable menu bar state.</p>
             </div>
             <div class="feature">
               <h3>Native notifications</h3>
-              <p>macOS alerts fire when deployments become ready, fail, cancel, or disappear.</p>
+              <p>macOS alerts fire only when deployments become ready, fail, cancel, or disappear.</p>
             </div>
             <div class="feature">
               <h3>Credential isolation</h3>
@@ -1608,17 +1608,17 @@
         <div class="build-panel">
           <div>
             <div class="section-heading">
-              <h2 id="install-title">Install the signed release.</h2>
+              <h2 id="install-title">Install from Homebrew.</h2>
               <p>
-                Use Homebrew for a managed install, or download the signed and notarized release zip directly from GitHub.
+                The recommended launch install is the signed and notarized Homebrew Cask. You can also download the release zip directly from GitHub.
               </p>
             </div>
             <div class="actions">
-              <a class="button primary" href="https://github.com/snapre/DeployBar/releases/latest">Download latest release</a>
-              <a class="button secondary" href="https://github.com/snapre/homebrew-tap">Homebrew tap</a>
+              <a class="button primary" href="https://github.com/snapre/homebrew-tap">Homebrew tap</a>
+              <a class="button secondary" href="https://github.com/snapre/DeployBar/releases/latest">Download latest release</a>
             </div>
             <ul class="privacy-list" aria-label="Release details">
-              <li>Homebrew installs from the public <code>snapre/tap</code> cask.</li>
+              <li>Install with <code>brew install --cask snapre/tap/deploybar</code>.</li>
               <li>Direct release installs use the latest GitHub Release zip.</li>
               <li>Signed with Developer ID and accepted by Apple notarization.</li>
             </ul>
@@ -1638,15 +1638,16 @@ open https://github.com/snapre/DeployBar/releases/latest</code></pre>
         <div class="build-panel">
           <div>
             <div class="section-heading">
-              <h2 id="build-title">Build it from source.</h2>
+              <h2 id="build-title">Local-first by design.</h2>
               <p>
-                DeployBar is a Swift Package with a native SwiftUI and AppKit shell. No Electron runtime, no backend account, and no hosted credential sync.
+                DeployBar is a Swift Package with a native SwiftUI and AppKit shell. No Electron runtime, no backend account, no telemetry, and no hosted credential sync.
               </p>
             </div>
             <ul class="privacy-list" aria-label="Privacy and permissions">
               <li>Tokens are stored only in Keychain under the DeployBar token service.</li>
               <li>Settings are kept under Application Support as local JSON.</li>
               <li>The app requests notification permission, not Full Disk Access, Accessibility, or Screen Recording.</li>
+              <li>You can build the open-source launch from source with Swift 6 and the included package script.</li>
             </ul>
           </div>
           <div class="command-box" aria-label="Terminal commands">

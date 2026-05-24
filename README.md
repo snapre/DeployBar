@@ -1,10 +1,28 @@
 # DeployBar
 
-DeployBar is a free, open-source, local-first macOS menu bar app for watching cloud deployment status across providers such as Vercel and Railway.
+DeployBar is for the moment after you hit deploy and start checking too many tabs.
+
+If one service is building on Vercel, another release is rolling through Heroku, and a side project is waiting on Railway or GitHub Deployments, you should not need a row of dashboards open just to know whether anything needs attention. DeployBar turns that refresh loop into one native macOS menu bar status, one compact popover, and notifications only when a deployment becomes ready, fails, cancels, or disappears.
+
+This is the first public launch of DeployBar: a free, open-source, local-first Mac app built in Swift. There is no Electron shell, no DeployBar backend service, and no hosted credential sync.
+
+Install the latest signed and notarized release with Homebrew Cask:
+
+```bash
+brew install --cask snapre/tap/deploybar
+```
 
 ![DeployBar website first screen](docs/assets/deploybar-index-first-screen.png)
 
-The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration. There is no Electron shell and no backend service.
+## Why DeployBar
+
+- Replace the deployment-dashboard checking loop with one menu bar snapshot.
+- See active, waiting, failed, and healthy deployments in a native popover.
+- Let macOS notify you when a deploy ships, fails, cancels, or is removed.
+- Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
+- Run it locally. Tokens stay in Keychain, and non-secret settings stay on your Mac.
+
+The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration.
 
 ## Trust model
 
@@ -13,9 +31,9 @@ The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for
 - Provider tokens are stored in macOS Keychain, not JSON settings, logs, or diagnostics.
 - See [PRIVACY.md](PRIVACY.md) for data handling and [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
-## Current state
+## First public release
 
-This repository currently contains:
+The launch build currently contains:
 
 - menu bar app shell with no Dock icon when packaged as an app bundle
 - custom status/menu bar glyph and packaged app icon
@@ -31,11 +49,11 @@ This repository currently contains:
 - macOS notifications for deployment transitions into ready/success, failed/error/crashed, canceled, or removed states
 - tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
 
-The next implementation phase is deeper provider diagnostics, optional failure log tailing, and polish around account/resource discovery.
+The next implementation phase is deeper provider diagnostics, optional failure log tailing, and more polish around account/resource discovery.
 
 ## Installation
 
-Install the latest signed and notarized release with Homebrew Cask:
+Homebrew is the primary install path for the public launch:
 
 ```bash
 brew install --cask snapre/tap/deploybar
