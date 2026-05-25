@@ -148,6 +148,97 @@ final class DeploymentStore: ObservableObject {
         await RailwayProvider().discoverResources(token: token, tokenKind: tokenKind)
     }
 
+    func discoverCloudflareAccounts(token: String) async -> ProviderScopeDiscoveryResult {
+        await CloudflarePagesProvider().discoverAccounts(token: token)
+    }
+
+    func discoverProviderTargets(
+        provider: ProviderID,
+        token: String,
+        teamID: String? = nil,
+        teamSlug: String? = nil,
+        railwayTokenKind: RailwayTokenKind = .accountOrWorkspace,
+        authHeader: ProviderAuthHeader? = nil
+    ) async -> ProviderTargetDiscoveryResult {
+        let account = ProviderAccount(
+            provider: provider,
+            displayName: provider.displayName,
+            tokenReference: "discovery",
+            teamID: teamID,
+            teamSlug: teamSlug,
+            railwayTokenKind: provider == .railway ? railwayTokenKind : nil,
+            authHeader: authHeader
+        )
+
+        return await discoverProviderTargets(token: token, account: account)
+    }
+
+    func discoverProviderTargets(for account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        do {
+            guard let token = try tokenStore.token(for: account), !token.isEmpty else {
+                return ProviderTargetDiscoveryResult(
+                    issues: [ProviderIssue(provider: account.provider, accountID: account.id, kind: .notConfigured, message: "\(account.provider.displayName) API token is not configured.")]
+                )
+            }
+            return await discoverProviderTargets(token: token, account: account)
+        } catch {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: account.provider, accountID: account.id, kind: .unknown, message: "Could not read \(account.provider.displayName) token from Keychain.")]
+            )
+        }
+    }
+
+    private func discoverProviderTargets(token: String, account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        let provider = account.provider
+        switch provider {
+        case .vercel:
+            let result = await VercelProvider().discoverResources(token: token, account: account)
+            return ProviderTargetDiscoveryResult(
+                targets: result.projects.map { MonitoredTarget(projectID: $0.id, projectName: $0.name) },
+                issues: result.issues
+            ).deduplicated(for: provider)
+        case .railway:
+            let result = await RailwayProvider().discoverResources(token: token, tokenKind: account.railwayTokenKind ?? .accountOrWorkspace)
+            return ProviderTargetDiscoveryResult(
+                targets: result.projects.flatMap { project in
+                    let services = project.services.isEmpty ? [RailwayServiceResource(id: "", name: "")] : project.services
+                    let environments = project.environments.isEmpty ? [RailwayEnvironmentResource(id: "", name: "")] : project.environments
+                    return services.flatMap { service in
+                        environments.map { environment in
+                            MonitoredTarget(
+                                projectID: project.id,
+                                projectName: project.name,
+                                serviceID: service.id.nilIfEmpty,
+                                serviceName: service.name.nilIfEmpty,
+                                environmentID: environment.id.nilIfEmpty,
+                                environmentName: environment.name.nilIfEmpty
+                            )
+                        }
+                    }
+                },
+                issues: result.issues
+            ).deduplicated(for: provider)
+        case .netlify:
+            return await NetlifyProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .render:
+            return await RenderProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .cloudflarePages:
+            return await CloudflarePagesProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .digitalOcean:
+            return await DigitalOceanProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .heroku:
+            return await HerokuProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .github:
+            return await GitHubDeploymentsProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .gitlab:
+            return await GitLabDeploymentsProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .mock:
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: provider, kind: .notConfigured, message: "\(provider.displayName) discovery is not supported yet.")]
+            )
+        }
+    }
+
     func discoverRailwayResources(for account: ProviderAccount) async -> RailwayDiscoveryResult {
         do {
             guard let token = try tokenStore.token(for: account), !token.isEmpty else {

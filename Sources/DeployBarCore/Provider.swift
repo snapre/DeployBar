@@ -8,6 +8,7 @@ public struct ProviderAccount: Identifiable, Codable, Equatable, Sendable {
     public var teamID: String?
     public var teamSlug: String?
     public var railwayTokenKind: RailwayTokenKind?
+    public var authHeader: ProviderAuthHeader?
     public var isEnabled: Bool
     public var monitoredTargets: [MonitoredTarget]
 
@@ -19,6 +20,7 @@ public struct ProviderAccount: Identifiable, Codable, Equatable, Sendable {
         teamID: String? = nil,
         teamSlug: String? = nil,
         railwayTokenKind: RailwayTokenKind? = nil,
+        authHeader: ProviderAuthHeader? = nil,
         isEnabled: Bool = true,
         monitoredTargets: [MonitoredTarget] = []
     ) {
@@ -29,6 +31,7 @@ public struct ProviderAccount: Identifiable, Codable, Equatable, Sendable {
         self.teamID = teamID
         self.teamSlug = teamSlug
         self.railwayTokenKind = railwayTokenKind
+        self.authHeader = authHeader
         self.isEnabled = isEnabled
         self.monitoredTargets = monitoredTargets
     }
@@ -138,7 +141,16 @@ public struct MonitoredTarget: Identifiable, Codable, Equatable, Sendable {
     }
 
     private func displayValue(for field: ProviderTargetField, fallback: String) -> String {
-        value(for: field) ?? fallback
+        switch field {
+        case .project:
+            return projectName.nilIfBlank ?? projectID.nilIfBlank ?? fallback
+        case .service:
+            return serviceName.nilIfBlank ?? serviceID.nilIfBlank ?? fallback
+        case .environment:
+            return environmentName.nilIfBlank ?? environmentID.nilIfBlank ?? fallback
+        case .branch:
+            return branch.nilIfBlank ?? fallback
+        }
     }
 }
 
@@ -332,7 +344,7 @@ public protocol MutableTokenStore: TokenStore {
     func deleteToken(for account: ProviderAccount) throws
 }
 
-public enum ProviderAuthHeader: Equatable, Sendable {
+public enum ProviderAuthHeader: String, Codable, Equatable, Sendable {
     case bearer
     case railwayProjectToken
 }

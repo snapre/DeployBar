@@ -254,8 +254,11 @@ private struct AddMonitoredTargetInline: View {
     @State private var isExpanded = false
     @State private var isDiscoveringRailway = false
     @State private var isDiscoveringVercel = false
+    @State private var isDiscoveringProvider = false
     @State private var railwayProjects: [RailwayProjectResource] = []
     @State private var vercelProjects: [VercelProjectResource] = []
+    @State private var discoveredTargets: [MonitoredTarget] = []
+    @State private var selectedDiscoveredTargetID = ""
     @State private var discoveryMessage: String?
 
     var body: some View {
@@ -278,15 +281,14 @@ private struct AddMonitoredTargetInline: View {
                         vercelDiscoveryHeader
                         vercelTargetFields
                     } else {
+                        genericDiscoveryHeader
                         genericTargetFields
                     }
 
                     HStack {
                         Spacer()
                         Button("Add") {
-                            onAdd(target)
-                            reset()
-                            isExpanded = false
+                            addCurrentTarget()
                         }
                         .disabled(!canAdd)
                     }
@@ -303,6 +305,27 @@ private struct AddMonitoredTargetInline: View {
 
     private var provider: ProviderID {
         account.provider
+    }
+
+    @ViewBuilder
+    private var genericDiscoveryHeader: some View {
+        if supportsGenericSmartDiscovery {
+            HStack(spacing: 8) {
+                Button {
+                    Task {
+                        await discoverProviderTargets()
+                    }
+                } label: {
+                    Label(isDiscoveringProvider ? "Discovering" : "Smart Discover", systemImage: "sparkle.magnifyingglass")
+                }
+                .disabled(isDiscoveringProvider)
+
+                Text(discoveryMessage ?? genericDiscoveryHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
     }
 
     @ViewBuilder
@@ -463,6 +486,7 @@ private struct AddMonitoredTargetInline: View {
     @ViewBuilder
     private var genericTargetFields: some View {
         let labels = targetInputLabels
+        discoveredTargetPicker
         if provider.targetBehavior.displayFields.contains(.project) {
             HStack(spacing: 8) {
                 TextField(labels.projectID, text: $projectID)
@@ -483,6 +507,25 @@ private struct AddMonitoredTargetInline: View {
         }
         if provider.targetBehavior.displayFields.contains(.branch) {
             TextField(labels.branch, text: $branch)
+        }
+    }
+
+    @ViewBuilder
+    private var discoveredTargetPicker: some View {
+        if supportsGenericSmartDiscovery, !availableDiscoveredTargets.isEmpty {
+            Picker("Discovered", selection: $selectedDiscoveredTargetID) {
+                Text("Choose target").tag("")
+                ForEach(availableDiscoveredTargets) { target in
+                    Text(target.displayName(for: provider)).tag(target.id)
+                }
+            }
+            .onChange(of: selectedDiscoveredTargetID) { _ in
+                applySelectedDiscoveredTarget()
+            }
+        } else if supportsGenericSmartDiscovery, !discoveredTargets.isEmpty {
+            Text("All discovered \(provider.displayName) targets are already added.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -509,6 +552,32 @@ private struct AddMonitoredTargetInline: View {
         account.monitoredTargets.contains { $0.matchesScope(of: target, for: provider) }
     }
 
+    private var supportsGenericSmartDiscovery: Bool {
+        switch provider {
+        case .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .github, .gitlab:
+            true
+        case .mock, .vercel, .railway:
+            false
+        }
+    }
+
+    private var genericDiscoveryHint: String {
+        if isDiscoveringProvider {
+            return "Reading saved \(provider.displayName) token."
+        }
+        if !availableDiscoveredTargets.isEmpty {
+            return "Found \(availableDiscoveredTargets.count) available target\(availableDiscoveredTargets.count == 1 ? "" : "s")."
+        }
+        if !discoveredTargets.isEmpty {
+            return "All discovered \(provider.displayName) targets are already added."
+        }
+        return "Find targets from the saved token."
+    }
+
+    private var availableDiscoveredTargets: [MonitoredTarget] {
+        discoveredTargets.excludingTargets(account.monitoredTargets, for: provider)
+    }
+
     private var selectedRailwayProject: RailwayProjectResource? {
         availableRailwayProjects.first { $0.id == projectID }
     }
@@ -521,7 +590,7 @@ private struct AddMonitoredTargetInline: View {
         availableRailwayEnvironments.first { $0.id == environmentID }
     }
 
-    private func reset() {
+    private func resetTargetInputs() {
         projectID = ""
         projectName = ""
         serviceID = ""
@@ -529,9 +598,15 @@ private struct AddMonitoredTargetInline: View {
         environmentID = ""
         environmentName = ""
         branch = ""
+        selectedDiscoveredTargetID = ""
+    }
+
+    private func reset() {
+        resetTargetInputs()
         discoveryMessage = nil
         railwayProjects = []
         vercelProjects = []
+        discoveredTargets = []
     }
 
     private var selectedVercelProject: VercelProjectResource? {
@@ -633,6 +708,77 @@ private struct AddMonitoredTargetInline: View {
 
     private var targetInputLabels: TargetInputLabels {
         TargetInputLabels(provider: provider)
+    }
+
+    private func addCurrentTarget() {
+        let addedTarget = target
+        onAdd(addedTarget)
+
+        if discoveredTargets.isEmpty {
+            reset()
+            isExpanded = false
+            return
+        }
+
+        discoveredTargets.removeAll { $0.matchesScope(of: addedTarget, for: provider) }
+        resetTargetInputs()
+
+        if availableDiscoveredTargets.isEmpty {
+            discoveryMessage = "All discovered \(provider.displayName) targets are already added."
+        } else {
+            discoveryMessage = "Found \(availableDiscoveredTargets.count) available target\(availableDiscoveredTargets.count == 1 ? "" : "s")."
+            applyFirstDiscoveredTarget()
+        }
+    }
+
+    private func discoverProviderTargets() async {
+        isDiscoveringProvider = true
+        discoveryMessage = nil
+        let result = await store.discoverProviderTargets(for: account)
+        isDiscoveringProvider = false
+
+        if let issue = result.issues.first {
+            discoveryMessage = issue.message
+            discoveredTargets = []
+            resetTargetInputs()
+            return
+        }
+
+        discoveredTargets = result.targets.deduplicatedTargets(for: provider)
+        resetTargetInputs()
+
+        if discoveredTargets.isEmpty {
+            discoveryMessage = "No \(provider.displayName) targets were discovered."
+        } else if availableDiscoveredTargets.isEmpty {
+            discoveryMessage = "All discovered \(provider.displayName) targets are already added."
+        } else {
+            discoveryMessage = "Found \(availableDiscoveredTargets.count) available target\(availableDiscoveredTargets.count == 1 ? "" : "s")."
+            applyFirstDiscoveredTarget()
+        }
+    }
+
+    private func applyFirstDiscoveredTarget() {
+        guard let target = availableDiscoveredTargets.first else { return }
+        selectedDiscoveredTargetID = target.id
+        applyDiscoveredTarget(target)
+    }
+
+    private func applySelectedDiscoveredTarget() {
+        guard let target = availableDiscoveredTargets.first(where: { $0.id == selectedDiscoveredTargetID }) else {
+            resetTargetInputs()
+            return
+        }
+        applyDiscoveredTarget(target)
+    }
+
+    private func applyDiscoveredTarget(_ target: MonitoredTarget) {
+        projectID = target.projectID ?? ""
+        projectName = target.projectName ?? ""
+        serviceID = target.serviceID ?? ""
+        serviceName = target.serviceName ?? ""
+        environmentID = target.environmentID ?? ""
+        environmentName = target.environmentName ?? ""
+        branch = target.branch ?? ""
     }
 
     private func discoverVercelResources() async {

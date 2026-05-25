@@ -47,7 +47,7 @@ public struct CloudflarePagesProvider: DeploymentProvider {
                 }
 
                 let response = try await client.send(makeDeploymentsRequest(accountID: cloudflareAccountID, projectName: projectName, token: token))
-                if let issue = ProviderIssue.fromHTTPStatus(provider: id, accountID: context.account.id, statusCode: response.statusCode) {
+                if let issue = issue(from: response, accountID: context.account.id) {
                     issues.append(issue)
                     continue
                 }
@@ -68,13 +68,66 @@ public struct CloudflarePagesProvider: DeploymentProvider {
         }
     }
 
+    public func discoverAccounts(token: String) async -> ProviderScopeDiscoveryResult {
+        guard !token.isEmpty else {
+            return ProviderScopeDiscoveryResult(
+                issues: [ProviderIssue(provider: id, kind: .notConfigured, message: "Cloudflare API token is not configured.")]
+            )
+        }
+
+        do {
+            let response = try await client.send(makeMembershipsRequest(token: token))
+            if let issue = issue(from: response, accountID: nil) {
+                return ProviderScopeDiscoveryResult(issues: [issue])
+            }
+
+            let scopes = try CloudflarePagesParser.membershipAccounts(from: response.data).map { account in
+                ProviderScopeResource(id: account.id, name: account.name)
+            }
+            return ProviderScopeDiscoveryResult(scopes: scopes)
+        } catch let error as APIClientError {
+            return ProviderScopeDiscoveryResult(
+                issues: [ProviderUtilities.issue(for: error, provider: id, accountID: nil)]
+            )
+        } catch {
+            return ProviderScopeDiscoveryResult(
+                issues: [ProviderIssue(provider: id, kind: .apiChanged, message: "Cloudflare account discovery response could not be parsed.")]
+            )
+        }
+    }
+
+    public func discoverTargets(token: String, account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        guard !token.isEmpty else {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .notConfigured, message: "Cloudflare API token is not configured.")]
+            )
+        }
+        guard let cloudflareAccountID = account.teamID, !cloudflareAccountID.isEmpty else {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .notConfigured, message: "Cloudflare Pages requires an account ID.")]
+            )
+        }
+
+        do {
+            return ProviderTargetDiscoveryResult(targets: try await targets(for: account, cloudflareAccountID: cloudflareAccountID, token: token))
+        } catch let error as CloudflarePagesIssue {
+            return ProviderTargetDiscoveryResult(issues: [error.issue])
+        } catch let error as APIClientError {
+            return ProviderTargetDiscoveryResult(issues: [ProviderUtilities.issue(for: error, provider: id, accountID: account.id)])
+        } catch {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .apiChanged, message: "Cloudflare Pages discovery response could not be parsed.")]
+            )
+        }
+    }
+
     private func targets(for account: ProviderAccount, cloudflareAccountID: String, token: String) async throws -> [MonitoredTarget] {
         if !account.monitoredTargets.isEmpty {
             return account.monitoredTargets
         }
 
         let response = try await client.send(makeProjectsRequest(accountID: cloudflareAccountID, token: token))
-        if let issue = ProviderIssue.fromHTTPStatus(provider: id, accountID: account.id, statusCode: response.statusCode) {
+        if let issue = issue(from: response, accountID: account.id) {
             throw CloudflarePagesIssue(issue)
         }
 
@@ -83,9 +136,15 @@ public struct CloudflarePagesProvider: DeploymentProvider {
         }
     }
 
-    private func makeProjectsRequest(accountID: String, token: String) throws -> URLRequest {
-        var components = URLComponents(url: baseURL.appendingPathComponent("accounts").appendingPathComponent(accountID).appendingPathComponent("pages").appendingPathComponent("projects"), resolvingAgainstBaseURL: false)
+    private func makeMembershipsRequest(token: String) throws -> URLRequest {
+        var components = URLComponents(url: baseURL.appendingPathComponent("memberships"), resolvingAgainstBaseURL: false)
         components?.queryItems = [URLQueryItem(name: "per_page", value: "\(projectLimit)")]
+        guard let url = components?.url else { throw APIClientError.invalidResponse }
+        return authenticatedRequest(url: url, token: token)
+    }
+
+    private func makeProjectsRequest(accountID: String, token: String) throws -> URLRequest {
+        let components = URLComponents(url: baseURL.appendingPathComponent("accounts").appendingPathComponent(accountID).appendingPathComponent("pages").appendingPathComponent("projects"), resolvingAgainstBaseURL: false)
         guard let url = components?.url else { throw APIClientError.invalidResponse }
         return authenticatedRequest(url: url, token: token)
     }
@@ -104,6 +163,21 @@ public struct CloudflarePagesProvider: DeploymentProvider {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("DeployBar/0.1", forHTTPHeaderField: "User-Agent")
         return request
+    }
+
+    private func issue(from response: HTTPResponse, accountID: String?) -> ProviderIssue? {
+        guard let issue = ProviderIssue.fromHTTPStatus(provider: id, accountID: accountID, statusCode: response.statusCode) else {
+            return nil
+        }
+        guard let message = CloudflarePagesParser.errorMessage(from: response.data) else {
+            return issue
+        }
+        return ProviderIssue(
+            provider: id,
+            accountID: accountID,
+            kind: issue.kind,
+            message: "\(displayName) API returned HTTP \(response.statusCode): \(message)"
+        )
     }
 }
 
@@ -143,6 +217,30 @@ public enum CloudflarePagesParser {
         return response.result
     }
 
+    static func membershipAccounts(from data: Data) throws -> [CloudflareAccountResource] {
+        let response = try JSONDecoder.deployBar.decode(CloudflarePagesResponse<[CloudflareMembershipResource]>.self, from: data)
+        return response.result.compactMap(\.account)
+    }
+
+    static func errorMessage(from data: Data) -> String? {
+        guard
+            let response = try? JSONDecoder.deployBar.decode(CloudflarePagesErrorResponse.self, from: data)
+        else {
+            return nil
+        }
+
+        let messages = response.errors.compactMap { error -> String? in
+            let message = error.message.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !message.isEmpty else { return nil }
+            if let code = error.code {
+                return "\(message) (\(code))"
+            }
+            return message
+        }
+        guard !messages.isEmpty else { return nil }
+        return messages.joined(separator: "; ")
+    }
+
     private static func finishedAt(status: DeploymentStatus, deployment: CloudflarePagesDeployment) -> Date? {
         switch status {
         case .success, .ready, .failed, .error, .canceled, .skipped:
@@ -158,6 +256,15 @@ private struct CloudflarePagesResponse<Result: Decodable>: Decodable {
     var result: Result
 }
 
+private struct CloudflarePagesErrorResponse: Decodable {
+    var errors: [CloudflarePagesAPIError]
+}
+
+private struct CloudflarePagesAPIError: Decodable {
+    var code: Int?
+    var message: String
+}
+
 struct CloudflarePagesProject: Decodable {
     var id: String?
     var name: String
@@ -168,6 +275,15 @@ struct CloudflarePagesProject: Decodable {
         case name
         case productionBranch = "production_branch"
     }
+}
+
+struct CloudflareAccountResource: Decodable {
+    var id: String
+    var name: String
+}
+
+private struct CloudflareMembershipResource: Decodable {
+    var account: CloudflareAccountResource?
 }
 
 private struct CloudflarePagesDeployment: Decodable {
@@ -237,4 +353,3 @@ private struct CloudflarePagesIssue: Error {
         self.issue = issue
     }
 }
-

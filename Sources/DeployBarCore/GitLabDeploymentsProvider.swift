@@ -59,13 +59,35 @@ public struct GitLabDeploymentsProvider: DeploymentProvider {
         return ProviderRefreshResult(snapshots: ProviderUtilities.deduplicated(snapshots), issues: issues)
     }
 
-    private func makeDeploymentsRequest(project: String, environment: String?, account: ProviderAccount, token: String) throws -> URLRequest {
-        let apiBaseURL = account.teamSlug.flatMap(URL.init(string:)) ?? baseURL
-        guard var components = URLComponents(url: apiBaseURL, resolvingAgainstBaseURL: false) else {
-            throw APIClientError.invalidResponse
+    public func discoverTargets(token: String, account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        guard !token.isEmpty else {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .notConfigured, message: "GitLab token is not configured.")]
+            )
         }
-        let basePath = components.percentEncodedPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let prefix = basePath.isEmpty ? "" : "/\(basePath)"
+
+        do {
+            let response = try await client.send(makeProjectsRequest(account: account, token: token))
+            if let issue = ProviderIssue.fromHTTPStatus(provider: id, accountID: account.id, statusCode: response.statusCode) {
+                return ProviderTargetDiscoveryResult(issues: [issue])
+            }
+
+            let targets = try GitLabDeploymentsParser.projects(from: response.data).prefix(100).map { project in
+                MonitoredTarget(projectID: project.pathWithNamespace, projectName: project.pathWithNamespace)
+            }
+            return ProviderTargetDiscoveryResult(targets: Array(targets))
+        } catch let error as APIClientError {
+            return ProviderTargetDiscoveryResult(issues: [ProviderUtilities.issue(for: error, provider: id, accountID: account.id)])
+        } catch {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .apiChanged, message: "GitLab project discovery response could not be parsed.")]
+            )
+        }
+    }
+
+    private func makeDeploymentsRequest(project: String, environment: String?, account: ProviderAccount, token: String) throws -> URLRequest {
+        let (componentsBase, prefix) = try apiComponents(for: account)
+        var components = componentsBase
         components.percentEncodedPath = "\(prefix)/projects/\(percentEncodedPathComponent(project))/deployments"
         var queryItems = [
             URLQueryItem(name: "per_page", value: "\(limit)"),
@@ -78,9 +100,42 @@ public struct GitLabDeploymentsProvider: DeploymentProvider {
         components.queryItems = queryItems
         guard let url = components.url else { throw APIClientError.invalidResponse }
 
+        return authenticatedRequest(url: url, account: account, token: token)
+    }
+
+    private func makeProjectsRequest(account: ProviderAccount, token: String) throws -> URLRequest {
+        let (componentsBase, prefix) = try apiComponents(for: account)
+        var components = componentsBase
+        components.percentEncodedPath = "\(prefix)/projects"
+        components.queryItems = [
+            URLQueryItem(name: "membership", value: "true"),
+            URLQueryItem(name: "order_by", value: "last_activity_at"),
+            URLQueryItem(name: "sort", value: "desc"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        guard let url = components.url else { throw APIClientError.invalidResponse }
+
+        return authenticatedRequest(url: url, account: account, token: token)
+    }
+
+    private func apiComponents(for account: ProviderAccount) throws -> (URLComponents, String) {
+        let apiBaseURL = account.teamSlug.flatMap(URL.init(string:)) ?? baseURL
+        guard let components = URLComponents(url: apiBaseURL, resolvingAgainstBaseURL: false) else {
+            throw APIClientError.invalidResponse
+        }
+        let basePath = components.percentEncodedPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let prefix = basePath.isEmpty ? "" : "/\(basePath)"
+        return (components, prefix)
+    }
+
+    private func authenticatedRequest(url: URL, account: ProviderAccount, token: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue(token, forHTTPHeaderField: "PRIVATE-TOKEN")
+        if account.authHeader == .bearer {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            request.setValue(token, forHTTPHeaderField: "PRIVATE-TOKEN")
+        }
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("DeployBar/0.1", forHTTPHeaderField: "User-Agent")
         return request
@@ -94,6 +149,10 @@ public struct GitLabDeploymentsProvider: DeploymentProvider {
 }
 
 public enum GitLabDeploymentsParser {
+    fileprivate static func projects(from data: Data) throws -> [GitLabProject] {
+        try JSONDecoder.deployBar.decode([GitLabProject].self, from: data)
+    }
+
     public static func snapshots(from data: Data, account: ProviderAccount, target: MonitoredTarget, project: String, now: Date = Date()) throws -> [DeploymentSnapshot] {
         let deployments = try JSONDecoder.deployBar.decode([GitLabDeployment].self, from: data)
         return deployments.map { deployment in
@@ -136,6 +195,14 @@ public enum GitLabDeploymentsParser {
     private static func dashboardURL(project: String, deploymentID: Int) -> URL? {
         guard project.contains("/") else { return nil }
         return URL(string: "https://gitlab.com/\(project)/-/deployments/\(deploymentID)")
+    }
+}
+
+fileprivate struct GitLabProject: Decodable {
+    var pathWithNamespace: String
+
+    enum CodingKeys: String, CodingKey {
+        case pathWithNamespace = "path_with_namespace"
     }
 }
 

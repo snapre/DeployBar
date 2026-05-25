@@ -66,6 +66,32 @@ public struct GitHubDeploymentsProvider: DeploymentProvider {
         return ProviderRefreshResult(snapshots: ProviderUtilities.deduplicated(snapshots), issues: issues)
     }
 
+    public func discoverTargets(token: String, account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        guard !token.isEmpty else {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .notConfigured, message: "GitHub token is not configured.")]
+            )
+        }
+
+        do {
+            let response = try await client.send(makeRepositoriesRequest(token: token))
+            if let issue = ProviderIssue.fromHTTPStatus(provider: id, accountID: account.id, statusCode: response.statusCode) {
+                return ProviderTargetDiscoveryResult(issues: [issue])
+            }
+
+            let targets = try GitHubDeploymentsParser.repositories(from: response.data).prefix(100).map { repository in
+                MonitoredTarget(projectID: repository.fullName, projectName: repository.fullName)
+            }
+            return ProviderTargetDiscoveryResult(targets: Array(targets))
+        } catch let error as APIClientError {
+            return ProviderTargetDiscoveryResult(issues: [ProviderUtilities.issue(for: error, provider: id, accountID: account.id)])
+        } catch {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .apiChanged, message: "GitHub repository discovery response could not be parsed.")]
+            )
+        }
+    }
+
     private func latestStatus(
         for deployment: GitHubDeployment,
         token: String,
@@ -98,6 +124,17 @@ public struct GitHubDeploymentsProvider: DeploymentProvider {
         return authenticatedRequest(url: components?.url ?? statusesURL, token: token)
     }
 
+    private func makeRepositoriesRequest(token: String) throws -> URLRequest {
+        var components = URLComponents(url: baseURL.appendingPathComponent("user").appendingPathComponent("repos"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [
+            URLQueryItem(name: "affiliation", value: "owner,collaborator,organization_member"),
+            URLQueryItem(name: "sort", value: "updated"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        guard let url = components?.url else { throw APIClientError.invalidResponse }
+        return authenticatedRequest(url: url, token: token)
+    }
+
     private func authenticatedRequest(url: URL, token: String) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -112,6 +149,10 @@ public struct GitHubDeploymentsProvider: DeploymentProvider {
 public enum GitHubDeploymentsParser {
     static func deployments(from data: Data) throws -> [GitHubDeployment] {
         try JSONDecoder.deployBar.decode([GitHubDeployment].self, from: data)
+    }
+
+    static func repositories(from data: Data) throws -> [GitHubRepository] {
+        try JSONDecoder.deployBar.decode([GitHubRepository].self, from: data)
     }
 
     static func statuses(from data: Data) throws -> [GitHubDeploymentStatus] {
@@ -169,6 +210,14 @@ public enum GitHubDeploymentsParser {
     }
 }
 
+struct GitHubRepository: Decodable {
+    var fullName: String
+
+    enum CodingKeys: String, CodingKey {
+        case fullName = "full_name"
+    }
+}
+
 struct GitHubDeployment: Decodable {
     var id: Int
     var sha: String?
@@ -216,6 +265,29 @@ struct GitHubDeploymentStatus: Decodable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case creator
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(Int.self, forKey: .id)
+        state = try container.decodeIfPresent(String.self, forKey: .state)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        environmentURL = Self.decodeURL(from: container, forKey: .environmentURL)
+        targetURL = Self.decodeURL(from: container, forKey: .targetURL)
+        logURL = Self.decodeURL(from: container, forKey: .logURL)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+        creator = try container.decodeIfPresent(GitHubUser.self, forKey: .creator)
+    }
+
+    private static func decodeURL(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> URL? {
+        guard let rawValue = try? container.decodeIfPresent(String.self, forKey: key) else {
+            return nil
+        }
+        return ProviderUtilities.normalizedURL(from: rawValue)
     }
 }
 

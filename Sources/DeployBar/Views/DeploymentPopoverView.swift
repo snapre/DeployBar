@@ -20,6 +20,7 @@ struct DeploymentPopoverView: View {
     var usesScrollView = true
     var openSettings: (SettingsTab) -> Void = { _ in }
     @Environment(\.openURL) private var openURL
+    @State private var showsAllHealthy = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,7 +66,10 @@ struct DeploymentPopoverView: View {
             focusSummary
 
             ForEach(sectionedSnapshots) { section in
-                SnapshotSection(title: section.title, snapshots: section.snapshots) { snapshot in
+                SnapshotSection(
+                    section: section,
+                    onToggleExpansion: { showsAllHealthy.toggle() }
+                ) { snapshot in
                     open(snapshot)
                 }
             }
@@ -209,14 +213,21 @@ struct DeploymentPopoverView: View {
         let inProgress = focusedSnapshots.filter { $0.severity == .active || $0.severity == .pending }
         let recent = focusedSnapshots.filter(isLowEmphasisHistory)
         let healthy = focusedSnapshots.filter { $0.severity == .healthy && !isLowEmphasisHistory($0) }
-        let visibleHealthy = Array(healthy.prefix(attention.isEmpty && inProgress.isEmpty && recent.isEmpty ? 6 : 2))
+        let collapsedHealthyLimit = attention.isEmpty && inProgress.isEmpty && recent.isEmpty ? 6 : 2
+        let visibleHealthy = showsAllHealthy ? healthy : Array(healthy.prefix(collapsedHealthyLimit))
         let hiddenHealthyCount = healthy.count - visibleHealthy.count
 
         return [
             SnapshotGroup(title: "Needs attention", snapshots: attention),
             SnapshotGroup(title: "In progress", snapshots: inProgress),
             SnapshotGroup(title: "Recent", snapshots: recent),
-            SnapshotGroup(title: hiddenHealthyCount > 0 ? "Healthy +\(hiddenHealthyCount) hidden" : "Healthy", snapshots: visibleHealthy)
+            SnapshotGroup(
+                title: "Healthy",
+                snapshots: visibleHealthy,
+                hiddenCount: max(0, hiddenHealthyCount),
+                isExpanded: showsAllHealthy,
+                canExpand: healthy.count > collapsedHealthyLimit
+            )
         ].filter { !$0.snapshots.isEmpty }
     }
 
@@ -352,24 +363,42 @@ private struct FooterActionRow: View {
 private struct SnapshotGroup: Identifiable {
     var title: String
     var snapshots: [DeploymentSnapshot]
+    var hiddenCount = 0
+    var isExpanded = false
+    var canExpand = false
 
     var id: String { title }
 }
 
 private struct SnapshotSection: View {
-    var title: String
-    var snapshots: [DeploymentSnapshot]
+    var section: SnapshotGroup
+    var onToggleExpansion: () -> Void
     var onOpen: (DeploymentSnapshot) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
+            HStack(alignment: .firstTextBaseline) {
+                Text(sectionTitle)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                if section.canExpand {
+                    Button(section.isExpanded ? "Show less" : "Show all") {
+                        withAnimation(.snappy(duration: 0.18)) {
+                            onToggleExpansion()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                }
+            }
 
             VStack(spacing: 10) {
-                ForEach(snapshots) { snapshot in
+                ForEach(section.snapshots) { snapshot in
                     Button {
                         onOpen(snapshot)
                     } label: {
@@ -379,6 +408,13 @@ private struct SnapshotSection: View {
                 }
             }
         }
+    }
+
+    private var sectionTitle: String {
+        if section.hiddenCount > 0 {
+            return "\(section.title) +\(section.hiddenCount) hidden"
+        }
+        return section.title
     }
 }
 

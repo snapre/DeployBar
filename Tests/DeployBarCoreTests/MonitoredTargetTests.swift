@@ -57,4 +57,32 @@ final class MonitoredTargetTests: XCTestCase {
         XCTAssertFalse(emptyTarget.satisfiesRequiredFields(for: .github))
         XCTAssertEqual(MonitoredTarget(projectName: "docs").displayName(for: .netlify), "docs / All contexts / All branches")
     }
+
+    func testDiscoveryTargetsCanBeDeduplicatedAndFiltered() {
+        let existing = MonitoredTarget(projectID: "acme/api")
+        let targets = [
+            MonitoredTarget(projectName: "ACME/API"),
+            MonitoredTarget(projectID: "acme/web"),
+            MonitoredTarget(projectName: "acme/web")
+        ]
+
+        let availableTargets = targets.excludingTargets([existing], for: .github)
+
+        XCTAssertEqual(availableTargets.count, 1)
+        XCTAssertEqual(availableTargets.first?.projectID, "acme/web")
+    }
+
+    func testDisplayNamePrefersHumanNamesOverIDs() {
+        let target = MonitoredTarget(
+            projectID: "43db090d-4c41-4567-b424-9f0a9f026f0f",
+            projectName: "deploybar",
+            serviceID: "740e4f7b-0c94-4443-9d0c-9d5e6f287328",
+            serviceName: "api",
+            environmentID: "ba232523-f2d2-4216-823b-3f94d8e9f5ab",
+            environmentName: "production"
+        )
+
+        XCTAssertEqual(target.displayName(for: .railway), "deploybar / api / production")
+        XCTAssertTrue(target.satisfiesRequiredFields(for: .railway))
+    }
 }

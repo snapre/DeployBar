@@ -311,6 +311,27 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/api/v1/sites/site_123/deploys")
     }
 
+    func testNetlifyDiscoveryListsSitesWithoutFetchingDeploys() async throws {
+        let sitesBody = """
+        [
+          { "id": "site_123", "name": "docs" }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: sitesBody)])
+        let provider = NetlifyProvider(client: client, siteLimit: 5)
+        let account = ProviderAccount(provider: .netlify, displayName: "Netlify", tokenReference: "token")
+
+        let result = await provider.discoverTargets(token: "netlify_secret", account: account)
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.targets.count, 1)
+        XCTAssertEqual(result.targets[0].projectID, "site_123")
+        XCTAssertEqual(result.targets[0].projectName, "docs")
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/api/v1/sites")
+    }
+
     func testCloudflarePagesProviderRequiresAccountID() async {
         let provider = CloudflarePagesProvider(client: RecordingHTTPClient(responses: []))
         let account = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token")
@@ -359,7 +380,67 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(result.snapshots[0].status, .success)
         XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer cloudflare_secret")
         XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects")
+        XCTAssertNil(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.query)
         XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects/web/deployments")
+    }
+
+    func testCloudflarePagesProviderSurfacesAPIErrorMessage() async throws {
+        let errorBody = """
+        {
+          "success": false,
+          "errors": [
+            { "code": 8000002, "message": "invalid account identifier" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 400, data: errorBody)])
+        let provider = CloudflarePagesProvider(client: client, projectLimit: 5)
+        let account = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token", teamID: "bad_account")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.message, "Cloudflare Pages API returned HTTP 400: invalid account identifier (8000002)")
+    }
+
+    func testCloudflarePagesDiscoveryListsAccountsAndTargets() async throws {
+        let accountsBody = """
+        {
+          "success": true,
+          "result": [
+            { "account": { "id": "acct_123", "name": "Acme" } }
+          ]
+        }
+        """.data(using: .utf8)!
+        let projectsBody = """
+        {
+          "success": true,
+          "result": [
+            { "id": "prj_123", "name": "web", "production_branch": "main" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: accountsBody),
+            HTTPResponse(statusCode: 200, data: projectsBody)
+        ])
+        let provider = CloudflarePagesProvider(client: client, projectLimit: 5)
+
+        let accountResult = await provider.discoverAccounts(token: "cloudflare_secret")
+        let targetAccount = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token", teamID: "acct_123")
+        let targetResult = await provider.discoverTargets(token: "cloudflare_secret", account: targetAccount)
+        let requests = await client.requests
+
+        XCTAssertEqual(accountResult.issues, [])
+        XCTAssertEqual(accountResult.scopes.first?.id, "acct_123")
+        XCTAssertEqual(accountResult.scopes.first?.name, "Acme")
+        XCTAssertEqual(targetResult.issues, [])
+        XCTAssertEqual(targetResult.targets.first?.projectID, "prj_123")
+        XCTAssertEqual(targetResult.targets.first?.projectName, "web")
+        XCTAssertEqual(targetResult.targets.first?.branch, "main")
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/memberships")
+        XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects")
     }
 
     func testGitHubProviderFetchesLatestDeploymentStatus() async throws {
@@ -385,7 +466,9 @@ final class ProviderFetchTests: XCTestCase {
             "id": 456,
             "state": "success",
             "description": "Deployment passed",
-            "environment_url": "https://api.example.com",
+            "environment_url": "",
+            "target_url": "https://api.example.com",
+            "log_url": "",
             "created_at": "2026-05-21T10:01:00Z",
             "updated_at": "2026-05-21T10:01:00Z",
             "creator": { "login": "deploy-bot" }
@@ -415,6 +498,32 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(requests.count, 2)
         XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer github_secret")
         XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/repos/acme/api/deployments")
+    }
+
+    func testGitHubDiscoveryListsAccessibleRepositories() async throws {
+        let body = """
+        [
+          { "full_name": "acme/api" },
+          { "full_name": "acme/web" }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = GitHubDeploymentsProvider(client: client)
+        let account = ProviderAccount(provider: .github, displayName: "GitHub", tokenReference: "token")
+
+        let result = await provider.discoverTargets(token: "github_secret", account: account)
+        let requests = await client.requests
+        let components = URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)
+        let query = Dictionary(uniqueKeysWithValues: (components?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.targets.map(\.projectID), ["acme/api", "acme/web"])
+        XCTAssertEqual(result.targets.map(\.projectName), ["acme/api", "acme/web"])
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer github_secret")
+        XCTAssertEqual(components?.path, "/user/repos")
+        XCTAssertEqual(query["affiliation"], "owner,collaborator,organization_member")
+        XCTAssertEqual(query["sort"], "updated")
+        XCTAssertEqual(query["per_page"], "100")
     }
 
     func testGitLabProviderBuildsAuthenticatedDeploymentRequest() async throws {
@@ -448,6 +557,39 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(result.snapshots[0].status, .deploying)
         XCTAssertEqual(requests[0].value(forHTTPHeaderField: "PRIVATE-TOKEN"), "gitlab_secret")
         XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.percentEncodedPath, "/api/v4/projects/acme%2Fapi/deployments")
+    }
+
+    func testGitLabDiscoveryListsMembershipProjectsWithBearerToken() async throws {
+        let body = """
+        [
+          { "path_with_namespace": "acme/api" },
+          { "path_with_namespace": "acme/web" }
+        ]
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = GitLabDeploymentsProvider(client: client, baseURL: URL(string: "https://gitlab.example.com/api/v4")!)
+        let account = ProviderAccount(
+            provider: .gitlab,
+            displayName: "GitLab",
+            tokenReference: "token",
+            authHeader: .bearer
+        )
+
+        let result = await provider.discoverTargets(token: "gitlab_oauth_secret", account: account)
+        let requests = await client.requests
+        let components = URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)
+        let query = Dictionary(uniqueKeysWithValues: (components?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.targets.map(\.projectID), ["acme/api", "acme/web"])
+        XCTAssertEqual(result.targets.map(\.projectName), ["acme/api", "acme/web"])
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer gitlab_oauth_secret")
+        XCTAssertNil(requests[0].value(forHTTPHeaderField: "PRIVATE-TOKEN"))
+        XCTAssertEqual(components?.path, "/api/v4/projects")
+        XCTAssertEqual(query["membership"], "true")
+        XCTAssertEqual(query["order_by"], "last_activity_at")
+        XCTAssertEqual(query["sort"], "desc")
+        XCTAssertEqual(query["per_page"], "100")
     }
 }
 

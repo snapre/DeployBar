@@ -23,7 +23,7 @@ enum ProviderUtilities {
         }
     }
 
-    static func issue(for error: APIClientError, provider: ProviderID, accountID: String) -> ProviderIssue {
+    static func issue(for error: APIClientError, provider: ProviderID, accountID: String?) -> ProviderIssue {
         switch error {
         case .invalidResponse:
             ProviderIssue(provider: provider, accountID: accountID, kind: .apiChanged, message: "\(provider.displayName) API returned an invalid response.")

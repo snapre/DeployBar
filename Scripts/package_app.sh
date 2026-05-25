@@ -94,6 +94,17 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
   <string>DeployBar.icns</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>DeployBar OAuth</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>deploybar</string>
+      </array>
+    </dict>
+  </array>
   <key>CFBundleShortVersionString</key>
   <string>${APP_VERSION}</string>
   <key>CFBundleVersion</key>

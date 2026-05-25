@@ -62,6 +62,26 @@ public struct HerokuProvider: DeploymentProvider {
         }
     }
 
+    public func discoverTargets(token: String, account: ProviderAccount) async -> ProviderTargetDiscoveryResult {
+        guard !token.isEmpty else {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .notConfigured, message: "Heroku API token is not configured.")]
+            )
+        }
+
+        do {
+            return ProviderTargetDiscoveryResult(targets: try await targets(for: account, token: token))
+        } catch let error as HerokuIssue {
+            return ProviderTargetDiscoveryResult(issues: [error.issue])
+        } catch let error as APIClientError {
+            return ProviderTargetDiscoveryResult(issues: [ProviderUtilities.issue(for: error, provider: id, accountID: account.id)])
+        } catch {
+            return ProviderTargetDiscoveryResult(
+                issues: [ProviderIssue(provider: id, accountID: account.id, kind: .apiChanged, message: "Heroku discovery response could not be parsed.")]
+            )
+        }
+    }
+
     private func targets(for account: ProviderAccount, token: String) async throws -> [MonitoredTarget] {
         if !account.monitoredTargets.isEmpty {
             return account.monitoredTargets
@@ -188,4 +208,3 @@ private struct HerokuIssue: Error {
         self.issue = issue
     }
 }
-
