@@ -210,12 +210,7 @@ public struct RailwayProvider: DeploymentProvider {
     }
 
     private func issue(for error: APIClientError, accountID: String) -> ProviderIssue {
-        switch error {
-        case .invalidResponse:
-            ProviderIssue(provider: id, accountID: accountID, kind: .apiChanged, message: "Railway API returned an invalid response.")
-        case .transport:
-            ProviderIssue(provider: id, accountID: accountID, kind: .network, message: "Could not reach Railway API.")
-        }
+        ProviderUtilities.issue(for: error, provider: id, accountID: accountID)
     }
 
     private func graphQLIssue(message: String, accountID: String) -> ProviderIssue {

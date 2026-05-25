@@ -151,12 +151,7 @@ public struct VercelProvider: DeploymentProvider {
     }
 
     private func issue(for error: APIClientError, accountID: String) -> ProviderIssue {
-        switch error {
-        case .invalidResponse:
-            ProviderIssue(provider: id, accountID: accountID, kind: .apiChanged, message: "Vercel API returned an invalid response.")
-        case .transport:
-            ProviderIssue(provider: id, accountID: accountID, kind: .network, message: "Could not reach Vercel API.")
-        }
+        ProviderUtilities.issue(for: error, provider: id, accountID: accountID)
     }
 
     private static func deduplicated(_ snapshots: [DeploymentSnapshot]) -> [DeploymentSnapshot] {

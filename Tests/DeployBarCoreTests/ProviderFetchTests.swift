@@ -275,6 +275,36 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertFalse(result.issues.first?.message.contains("super_secret_token") ?? true)
     }
 
+    func testTransportFailuresExplainLocalNetworkTroubleshooting() async {
+        let client = ThrowingHTTPClient(error: APIClientError.transport)
+        let provider = VercelProvider(client: client)
+        let account = ProviderAccount(provider: .vercel, displayName: "Vercel", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "vercel_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.kind, .network)
+        XCTAssertEqual(
+            result.issues.first?.message,
+            "Network connection issue: could not reach Vercel API. Check your internet, VPN, or proxy connection."
+        )
+    }
+
+    func testSharedTransportFailuresExplainLocalNetworkTroubleshooting() async {
+        let client = ThrowingHTTPClient(error: APIClientError.transport)
+        let provider = NetlifyProvider(client: client)
+        let account = ProviderAccount(provider: .netlify, displayName: "Netlify", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "netlify_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.kind, .network)
+        XCTAssertEqual(
+            result.issues.first?.message,
+            "Network connection issue: could not reach Netlify API. Check your internet, VPN, or proxy connection."
+        )
+    }
+
     func testNetlifyProviderListsSitesWhenNoTargetsConfigured() async throws {
         let sitesBody = """
         [
@@ -590,6 +620,18 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(query["order_by"], "last_activity_at")
         XCTAssertEqual(query["sort"], "desc")
         XCTAssertEqual(query["per_page"], "100")
+    }
+}
+
+private final class ThrowingHTTPClient: HTTPClient, @unchecked Sendable {
+    private let error: Error
+
+    init(error: Error) {
+        self.error = error
+    }
+
+    func send(_: URLRequest) async throws -> HTTPResponse {
+        throw error
     }
 }
 

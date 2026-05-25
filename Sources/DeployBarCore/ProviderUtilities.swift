@@ -28,8 +28,12 @@ enum ProviderUtilities {
         case .invalidResponse:
             ProviderIssue(provider: provider, accountID: accountID, kind: .apiChanged, message: "\(provider.displayName) API returned an invalid response.")
         case .transport:
-            ProviderIssue(provider: provider, accountID: accountID, kind: .network, message: "Could not reach \(provider.displayName) API.")
+            ProviderIssue(provider: provider, accountID: accountID, kind: .network, message: localNetworkIssueMessage(provider: provider))
         }
+    }
+
+    static func localNetworkIssueMessage(provider: ProviderID) -> String {
+        "Network connection issue: could not reach \(provider.displayName) API. Check your internet, VPN, or proxy connection."
     }
 }
 

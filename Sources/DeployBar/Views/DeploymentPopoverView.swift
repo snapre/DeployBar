@@ -237,9 +237,9 @@ struct DeploymentPopoverView: View {
 
     private var issueStrip: some View {
         VStack(alignment: .leading, spacing: 5) {
-            ForEach(store.issues.prefix(3)) { issue in
+            ForEach(issueStripItems.prefix(3)) { issue in
                 HStack(spacing: 7) {
-                    Image(systemName: issue.kind == .authentication ? "lock.trianglebadge.exclamationmark" : "exclamationmark.triangle")
+                    Image(systemName: issueIcon(for: issue.kind))
                     Text(issue.message)
                         .lineLimit(2)
                     Spacer()
@@ -253,6 +253,45 @@ struct DeploymentPopoverView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var issueStripItems: [IssueStripItem] {
+        let localNetworkIssues = store.issues.filter(isLocalNetworkIssue)
+        let otherIssues = store.issues.filter { !isLocalNetworkIssue($0) }
+        var items = otherIssues.map { issue in
+            IssueStripItem(id: issue.id, kind: issue.kind, message: issue.message)
+        }
+
+        if localNetworkIssues.count > 1 {
+            let providerCount = Set(localNetworkIssues.map(\.provider)).count
+            let apiLabel = providerCount == 1 ? "provider API" : "provider APIs"
+            items.append(
+                IssueStripItem(
+                    id: "local-network-rollup",
+                    kind: .network,
+                    message: "Network issue: Could not reach \(providerCount) \(apiLabel). Check your internet, VPN, or proxy connection."
+                )
+            )
+        } else if let issue = localNetworkIssues.first {
+            items.append(IssueStripItem(id: issue.id, kind: issue.kind, message: issue.message))
+        }
+
+        return items
+    }
+
+    private func isLocalNetworkIssue(_ issue: ProviderIssue) -> Bool {
+        issue.kind == .network && issue.message.contains("Check your internet, VPN, or proxy connection.")
+    }
+
+    private func issueIcon(for kind: ProviderFailureKind) -> String {
+        switch kind {
+        case .authentication:
+            "lock.trianglebadge.exclamationmark"
+        case .network:
+            "wifi.exclamationmark"
+        case .notConfigured, .rateLimited, .apiChanged, .decoding, .unknown:
+            "exclamationmark.triangle"
+        }
+    }
+
     private func open(_ snapshot: DeploymentSnapshot) {
         if let url = snapshot.dashboardURL ?? snapshot.deploymentURL {
             openURL(url)
@@ -263,6 +302,12 @@ struct DeploymentPopoverView: View {
         openSettings(tab)
     }
 
+}
+
+private struct IssueStripItem: Identifiable {
+    var id: String
+    var kind: ProviderFailureKind
+    var message: String
 }
 
 private struct InlineCounter: View {
