@@ -136,6 +136,34 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(snapshots[0].duration, 60)
     }
 
+    func testNetlifyNoContentChangeDeployIsSkipped() throws {
+        let json = """
+        [
+          {
+            "id": "deploy_123",
+            "site_id": "site_123",
+            "name": "docs",
+            "state": "error",
+            "context": "production",
+            "branch": "main",
+            "commit_ref": "abc123",
+            "title": "Publish docs",
+            "error_message": "Failed during stage 'checking build content for changes': Canceled build due to no content change",
+            "created_at": "2026-05-21T10:00:00Z",
+            "updated_at": "2026-05-21T10:01:00Z"
+          }
+        ]
+        """.data(using: .utf8)!
+
+        let account = ProviderAccount(provider: .netlify, displayName: "Netlify", tokenReference: "token")
+        let target = MonitoredTarget(projectID: "site_123", projectName: "docs")
+        let snapshots = try NetlifyParser.snapshots(from: json, account: account, target: target, now: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(snapshots[0].status, .skipped)
+        XCTAssertEqual(snapshots[0].severity, .healthy)
+        XCTAssertNil(snapshots[0].errorMessage)
+    }
+
     func testRenderDeploymentParsing() throws {
         let json = """
         [

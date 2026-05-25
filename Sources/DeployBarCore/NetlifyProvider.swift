@@ -125,7 +125,7 @@ public enum NetlifyParser {
     public static func snapshots(from data: Data, account: ProviderAccount, target: MonitoredTarget, now: Date = Date()) throws -> [DeploymentSnapshot] {
         let deployments = try JSONDecoder.deployBar.decode([NetlifyDeployment].self, from: data)
         return deployments.map { deployment in
-            let status = DeploymentStatusMapper.netlifyStatus(deployment.state)
+            let status = status(for: deployment)
             let finishedAt = finishedAt(status: status, deployment: deployment)
             let siteName = target.projectName ?? deployment.name ?? deployment.siteName ?? target.projectID ?? "Netlify Site"
 
@@ -145,7 +145,7 @@ public enum NetlifyParser {
                 duration: ProviderUtilities.duration(startedAt: deployment.createdAt, finishedAt: finishedAt),
                 dashboardURL: deployment.adminUrl,
                 deploymentURL: ProviderUtilities.normalizedURL(from: deployment.deploySslUrl ?? deployment.deployUrl ?? deployment.sslUrl ?? deployment.url),
-                errorMessage: deployment.errorMessage,
+                errorMessage: status == .failed ? deployment.errorMessage : nil,
                 lastUpdatedAt: now
             )
         }
@@ -162,6 +162,18 @@ public enum NetlifyParser {
         default:
             return nil
         }
+    }
+
+    private static func status(for deployment: NetlifyDeployment) -> DeploymentStatus {
+        let status = DeploymentStatusMapper.netlifyStatus(deployment.state)
+        guard status == .failed,
+              let errorMessage = deployment.errorMessage?.lowercased(),
+              errorMessage.contains("no content change")
+        else {
+            return status
+        }
+
+        return .skipped
     }
 }
 
