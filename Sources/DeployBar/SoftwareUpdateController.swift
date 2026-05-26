@@ -205,9 +205,7 @@ extension SoftwareUpdateController: SPUUpdaterDelegate {
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
-        if !status.isDownloaded {
-            status = .idle
-        }
+        clearTransientStatusIfNeeded()
         syncState(from: updater)
     }
 
@@ -247,19 +245,33 @@ extension SoftwareUpdateController: SPUUpdaterDelegate {
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: any Error) {
         installDownloadedUpdateHandler = nil
-        status = .failed(error.localizedDescription)
+        status = isNoUpdateError(error) ? .idle : .failed(error.localizedDescription)
         syncState(from: updater)
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
         syncState(from: updater)
-        guard error == nil else { return }
+        if let error {
+            if isNoUpdateError(error) {
+                clearTransientStatusIfNeeded()
+            }
+            return
+        }
 
+        clearTransientStatusIfNeeded()
+    }
+
+    private func clearTransientStatusIfNeeded() {
         switch status {
         case .checking, .downloading:
             status = .idle
         case .unavailable, .idle, .downloaded, .readyToInstall, .installing, .failed:
             break
         }
+    }
+
+    private func isNoUpdateError(_ error: any Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == SUSparkleErrorDomain && nsError.code == 1001
     }
 }
