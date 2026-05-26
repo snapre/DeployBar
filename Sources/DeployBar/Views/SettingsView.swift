@@ -11,6 +11,7 @@ enum SettingsTab: String {
 
 struct SettingsView: View {
     @ObservedObject var store: DeploymentStore
+    @ObservedObject var updateController: SoftwareUpdateController
     @AppStorage(SettingsTab.storageKey) private var selectedTab = SettingsTab.providers.rawValue
 
     var body: some View {
@@ -27,7 +28,7 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.diagnostics.rawValue)
 
-            AboutView()
+            AboutView(updateController: updateController)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }

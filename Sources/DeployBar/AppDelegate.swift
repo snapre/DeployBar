@@ -4,6 +4,7 @@ import UserNotifications
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let store = DeploymentStore()
+    let updateController = SoftwareUpdateController()
     private var menuBarController: MenuBarController?
     private var settingsWindowController: SettingsWindowController?
     private let notificationDelegate = NotificationCenterDelegate()
@@ -23,9 +24,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
         }
 
-        let settingsWindowController = SettingsWindowController(store: store)
+        let settingsWindowController = SettingsWindowController(store: store, updateController: updateController)
         self.settingsWindowController = settingsWindowController
-        menuBarController = MenuBarController(store: store) { tab in
+        menuBarController = MenuBarController(store: store, updateController: updateController) { tab in
             settingsWindowController.show(tab: tab)
         }
         store.start()

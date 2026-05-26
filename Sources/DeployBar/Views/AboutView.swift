@@ -1,12 +1,14 @@
 import SwiftUI
 
 struct AboutView: View {
+    @ObservedObject var updateController: SoftwareUpdateController
     private let info = AppBuildInfo.current
 
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
                 header
+                updates
                 links
                 Divider()
                 privacy
@@ -18,6 +20,72 @@ struct AboutView: View {
             .padding(.horizontal, 44)
             .padding(.bottom, 24)
         }
+    }
+
+    private var updates: some View {
+        VStack(spacing: 14) {
+            Toggle(
+                "Check for updates automatically",
+                isOn: Binding(
+                    get: { updateController.automaticUpdatesEnabled },
+                    set: { updateController.setAutomaticUpdatesEnabled($0) }
+                )
+            )
+            .toggleStyle(.checkbox)
+            .disabled(!updateController.isAvailable)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("Update Channel")
+                    .font(.system(size: 17, weight: .medium))
+
+                Spacer()
+
+                Picker(
+                    "",
+                    selection: Binding(
+                        get: { updateController.channel },
+                        set: { updateController.setChannel($0) }
+                    )
+                ) {
+                    ForEach(SoftwareUpdateChannel.allCases) { channel in
+                        Text(channel.title).tag(channel)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 172)
+                .disabled(!updateController.isAvailable)
+            }
+
+            Text(updateController.channel.description)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(updateButtonTitle) {
+                if updateController.status.isReadyToInstall {
+                    updateController.restartAndInstallDownloadedUpdate()
+                } else {
+                    updateController.checkForUpdates()
+                }
+            }
+            .controlSize(.large)
+            .disabled(!updateController.isAvailable || (!updateController.status.isReadyToInstall && !updateController.canCheckForUpdates))
+
+            if case let .unavailable(message) = updateController.status {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else if case let .failed(message) = updateController.status {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: 430)
+        .padding(.top, 4)
     }
 
     private var header: some View {
@@ -79,6 +147,23 @@ struct AboutView: View {
             .font(.caption)
             .foregroundStyle(.tertiary)
             .padding(.top, 8)
+    }
+
+    private var updateButtonTitle: String {
+        switch updateController.status {
+        case .checking:
+            "Checking..."
+        case .downloading:
+            "Downloading..."
+        case .downloaded:
+            "Update Downloaded"
+        case .readyToInstall:
+            "Restart to Update"
+        case .installing:
+            "Installing..."
+        case .unavailable, .idle, .failed:
+            "Check for Updates..."
+        }
     }
 }
 

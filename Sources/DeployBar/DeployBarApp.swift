@@ -6,7 +6,7 @@ struct DeployBarApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(store: appDelegate.store)
+            SettingsView(store: appDelegate.store, updateController: appDelegate.updateController)
                 .frame(width: 720, height: 520)
         }
     }

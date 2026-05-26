@@ -17,6 +17,7 @@ struct DeploymentPopoverView: View {
     static let preferredWidth: CGFloat = DeploymentPopoverLayout.preferredWidth
 
     @ObservedObject var store: DeploymentStore
+    @ObservedObject var updateController: SoftwareUpdateController
     var usesScrollView = true
     var openSettings: (SettingsTab) -> Void = { _ in }
     @Environment(\.openURL) private var openURL
@@ -43,6 +44,13 @@ struct DeploymentPopoverView: View {
                 } else {
                     snapshotContent
                         .layoutPriority(1)
+                }
+            }
+
+            if let updateVersion = updateController.status.readyToInstallVersion {
+                Divider()
+                UpdateDownloadedStrip(version: updateVersion) {
+                    updateController.restartAndInstallDownloadedUpdate()
                 }
             }
 
@@ -308,6 +316,37 @@ private struct IssueStripItem: Identifiable {
     var id: String
     var kind: ProviderFailureKind
     var message: String
+}
+
+private struct UpdateDownloadedStrip: View {
+    var version: String
+    var onInstall: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.blue)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Update downloaded")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Version \(version) is ready.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button("Restart to Update", action: onInstall)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 }
 
 private struct InlineCounter: View {

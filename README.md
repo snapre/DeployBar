@@ -85,6 +85,13 @@ Package a local `.app` bundle with `LSUIElement` and the DeployBar icon enabled:
 open .build/DeployBar.app
 ```
 
+Release builds include Sparkle app updates when these GitHub Actions secrets are set:
+
+- `DEPLOYBAR_SPARKLE_PUBLIC_ED_KEY`: the public EdDSA key embedded in `Info.plist`
+- `SPARKLE_PRIVATE_KEY`: the exported private EdDSA key used to sign `appcast.xml`
+
+The packaged app uses the latest GitHub Release asset at `https://github.com/snapre/DeployBar/releases/latest/download/appcast.xml` as its Sparkle feed.
+
 ## Configuration
 
 Non-secret settings are stored as JSON under:

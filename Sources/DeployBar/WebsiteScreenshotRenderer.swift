@@ -132,9 +132,10 @@ private struct WebsitePopoverScreenshot: View {
     static let size = CGSize(width: DeploymentPopoverView.preferredWidth, height: 786)
 
     @ObservedObject var store: DeploymentStore
+    @StateObject private var updateController = SoftwareUpdateController()
 
     var body: some View {
-        DeploymentPopoverView(store: store, usesScrollView: false)
+        DeploymentPopoverView(store: store, updateController: updateController, usesScrollView: false)
             .frame(width: Self.size.width, height: Self.size.height)
             .background(Color(nsColor: .windowBackgroundColor).opacity(0.97))
             .clipShape(RoundedRectangle(cornerRadius: 22))

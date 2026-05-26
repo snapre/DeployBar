@@ -33,7 +33,26 @@ CONFIGURATION="${DEPLOYBAR_BUILD_CONFIGURATION:-debug}"
 APP_VERSION="${DEPLOYBAR_VERSION:-$(resolve_git_version)}"
 BUILD_NUMBER="${DEPLOYBAR_BUILD_NUMBER:-$(resolve_git_build_number)}"
 BUILD_ARCHS_VALUE="${DEPLOYBAR_BUILD_ARCHS-arm64 x86_64}"
+SPARKLE_FEED_URL="${DEPLOYBAR_SPARKLE_FEED_URL:-https://github.com/snapre/DeployBar/releases/latest/download/appcast.xml}"
+SPARKLE_PUBLIC_ED_KEY="${DEPLOYBAR_SPARKLE_PUBLIC_ED_KEY:-}"
 IFS=' ' read -r -a BUILD_ARCHS <<< "$BUILD_ARCHS_VALUE"
+
+SPARKLE_PLIST_KEYS=""
+if [[ -n "$SPARKLE_FEED_URL" && -n "$SPARKLE_PUBLIC_ED_KEY" ]]; then
+  SPARKLE_PLIST_KEYS="$(cat <<PLIST
+  <key>SUFeedURL</key>
+  <string>${SPARKLE_FEED_URL}</string>
+  <key>SUPublicEDKey</key>
+  <string>${SPARKLE_PUBLIC_ED_KEY}</string>
+  <key>SUEnableAutomaticChecks</key>
+  <false/>
+  <key>SUAutomaticallyUpdate</key>
+  <false/>
+  <key>SUScheduledCheckInterval</key>
+  <integer>86400</integer>
+PLIST
+)"
+fi
 
 BUILD_ARGS=(-c "$CONFIGURATION" --product DeployBar)
 for ARCH in "${BUILD_ARCHS[@]}"; do
@@ -43,7 +62,7 @@ done
 swift build "${BUILD_ARGS[@]}"
 
 APP_DIR="$ROOT_DIR/.build/DeployBar.app"
-if [[ ${#BUILD_ARCHS[@]} -gt 0 ]]; then
+if [[ ${#BUILD_ARCHS[@]} -gt 1 ]]; then
   case "$CONFIGURATION" in
     debug)
       PRODUCT_CONFIGURATION="Debug"
@@ -57,6 +76,8 @@ if [[ ${#BUILD_ARCHS[@]} -gt 0 ]]; then
       ;;
   esac
   EXECUTABLE="$ROOT_DIR/.build/apple/Products/$PRODUCT_CONFIGURATION/DeployBar"
+elif [[ ${#BUILD_ARCHS[@]} -eq 1 ]]; then
+  EXECUTABLE="$ROOT_DIR/.build/${BUILD_ARCHS[0]}-apple-macosx/$CONFIGURATION/DeployBar"
 else
   EXECUTABLE="$ROOT_DIR/.build/$CONFIGURATION/DeployBar"
 fi
@@ -65,6 +86,7 @@ ICON_FILE="$RESOURCES_DIR/DeployBar.icns"
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
+mkdir -p "$APP_DIR/Contents/Frameworks"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 cp "$EXECUTABLE" "$APP_DIR/Contents/MacOS/DeployBar"
@@ -77,6 +99,30 @@ if [[ -d "$RESOURCES_DIR" ]]; then
 fi
 if [[ -f "$ICON_FILE" ]]; then
   cp "$ICON_FILE" "$APP_DIR/Contents/Resources/DeployBar.icns"
+fi
+
+find_sparkle_framework() {
+  local search_dir
+  local candidate
+
+  for search_dir in "$ROOT_DIR/.build/artifacts" "$ROOT_DIR/.build/checkouts" "$ROOT_DIR/.build"; do
+    [[ -d "$search_dir" ]] || continue
+    candidate="$(find "$search_dir" -path "*/Sparkle.framework" -type d -print -quit)"
+    if [[ -n "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+SPARKLE_FRAMEWORK="$(find_sparkle_framework || true)"
+if [[ -n "$SPARKLE_FRAMEWORK" ]]; then
+  ditto "$SPARKLE_FRAMEWORK" "$APP_DIR/Contents/Frameworks/Sparkle.framework"
+  if command -v install_name_tool >/dev/null 2>&1; then
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_DIR/Contents/MacOS/DeployBar" 2>/dev/null || true
+  fi
 fi
 
 cat > "$APP_DIR/Contents/Info.plist" <<PLIST
@@ -113,6 +159,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
   <string>13.0</string>
   <key>LSUIElement</key>
   <true/>
+${SPARKLE_PLIST_KEYS}
   <key>NSHumanReadableCopyright</key>
   <string>Copyright © 2026 DeployBar contributors.</string>
 </dict>

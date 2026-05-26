@@ -5,9 +5,9 @@ import SwiftUI
 final class SettingsWindowController: NSWindowController {
     private var hasCenteredWindow = false
 
-    init(store: DeploymentStore) {
+    init(store: DeploymentStore, updateController: SoftwareUpdateController) {
         let contentViewController = NSHostingController(
-            rootView: SettingsView(store: store)
+            rootView: SettingsView(store: store, updateController: updateController)
                 .frame(width: 720, height: 520)
         )
         let window = NSWindow(contentViewController: contentViewController)

@@ -12,6 +12,9 @@ let package = Package(
         .executable(name: "DeployBar", targets: ["DeployBar"]),
         .library(name: "DeployBarCore", targets: ["DeployBarCore"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.2")
+    ],
     targets: [
         .target(
             name: "DeployBarCore",
@@ -21,7 +24,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "DeployBar",
-            dependencies: ["DeployBarCore"],
+            dependencies: [
+                "DeployBarCore",
+                .product(name: "Sparkle", package: "Sparkle")
+            ],
             resources: [
                 .process("Resources")
             ],

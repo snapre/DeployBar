@@ -8,17 +8,23 @@ final class MenuBarController {
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
     private let store: DeploymentStore
-    private var cancellable: AnyCancellable?
+    private let updateController: SoftwareUpdateController
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(store: DeploymentStore, openSettings: @escaping (SettingsTab) -> Void) {
+    init(
+        store: DeploymentStore,
+        updateController: SoftwareUpdateController,
+        openSettings: @escaping (SettingsTab) -> Void
+    ) {
         self.store = store
+        self.updateController = updateController
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         popover.behavior = .transient
         let initialSize = preferredPopoverSize(relativeTo: nil)
         popover.contentSize = initialSize
         let contentViewController = NSHostingController(
-            rootView: DeploymentPopoverView(store: store) { [weak self] tab in
+            rootView: DeploymentPopoverView(store: store, updateController: updateController) { [weak self] tab in
                 self?.popover.performClose(nil)
                 openSettings(tab)
             }
@@ -27,11 +33,18 @@ final class MenuBarController {
         popover.contentViewController = contentViewController
 
         configureButton()
-        cancellable = store.objectWillChange.sink { [weak self] _ in
+        store.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in
                 self?.updateIcon()
             }
         }
+        .store(in: &cancellables)
+        updateController.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor in
+                self?.applyPreferredPopoverSize(relativeTo: self?.statusItem.button)
+            }
+        }
+        .store(in: &cancellables)
         updateIcon()
     }
 
@@ -77,7 +90,7 @@ final class MenuBarController {
         let issueHeight: CGFloat = store.issues.isEmpty ? 0 : DeploymentPopoverLayout.issueStripHeight
 
         guard !store.snapshots.isEmpty else {
-            return DeploymentPopoverLayout.emptyHeight + issueHeight
+            return DeploymentPopoverLayout.emptyHeight + issueHeight + updateNoticeHeight
         }
 
         let sectionCount = CGFloat(sectionCount(for: focusedSnapshots))
@@ -93,10 +106,15 @@ final class MenuBarController {
             + sectionTitleHeight
             + rowHeight
             + scrollSpacing
+            + updateNoticeHeight
             + issueHeight
             + DeploymentPopoverLayout.footerHeight
 
         return max(DeploymentPopoverLayout.listMinimumHeight, estimated)
+    }
+
+    private var updateNoticeHeight: CGFloat {
+        updateController.status.isReadyToInstall ? 74 : 0
     }
 
     private func visibleRowCount(for focusedSnapshots: [DeploymentSnapshot]) -> Int {
