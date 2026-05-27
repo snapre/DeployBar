@@ -15,7 +15,7 @@ public enum RailwayParser {
         return response.data?.deployments.edges.map { edge in
             let deployment = edge.node
             let status = DeploymentStatusMapper.railwayStatus(deployment.status)
-            let target = matchingTarget(for: deployment, account: account) ?? fallbackTarget
+            let target = fallbackTarget ?? matchingTarget(for: deployment, account: account)
             let projectID = deployment.projectId ?? target?.projectID
             let serviceID = deployment.serviceId ?? target?.serviceID
             let environmentID = deployment.environmentId ?? target?.environmentID
@@ -66,10 +66,16 @@ public enum RailwayParser {
 
     private static func matchingTarget(for deployment: RailwayDeployment, account: ProviderAccount) -> MonitoredTarget? {
         account.monitoredTargets.first { target in
-            (target.projectID == nil || deployment.projectId == nil || target.projectID == deployment.projectId)
-                && (target.serviceID == nil || deployment.serviceId == nil || target.serviceID == deployment.serviceId)
-                && (target.environmentID == nil || deployment.environmentId == nil || target.environmentID == deployment.environmentId)
+            matches(targetID: target.projectID, deploymentID: deployment.projectId)
+                && matches(targetID: target.serviceID, deploymentID: deployment.serviceId)
+                && matches(targetID: target.environmentID, deploymentID: deployment.environmentId)
         }
+    }
+
+    private static func matches(targetID: String?, deploymentID: String?) -> Bool {
+        guard let targetID else { return true }
+        guard let deploymentID else { return false }
+        return targetID == deploymentID
     }
 
     private static func dashboardURL(projectID: String?, serviceID: String?, environmentID: String?) -> URL? {

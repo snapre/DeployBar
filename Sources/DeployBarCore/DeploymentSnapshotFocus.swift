@@ -1,8 +1,7 @@
-import DeployBarCore
 import Foundation
 
-enum DeploymentSnapshotFocus {
-    static func focused(_ snapshots: [DeploymentSnapshot]) -> [DeploymentSnapshot] {
+public enum DeploymentSnapshotFocus {
+    public static func focused(_ snapshots: [DeploymentSnapshot]) -> [DeploymentSnapshot] {
         var snapshotsByTarget: [String: DeploymentSnapshot] = [:]
 
         for snapshot in snapshots {
@@ -61,12 +60,20 @@ enum DeploymentSnapshotFocus {
         if !isLowSignalHistory(candidate), isLowSignalHistory(existing) {
             return true
         }
+
+        let existingDate = sortDate(for: existing)
+        let candidateDate = sortDate(for: candidate)
+        if existingDate != candidateDate {
+            return candidateDate > existingDate
+        }
+
         let existingPriority = selectionPriority(for: existing)
         let candidatePriority = selectionPriority(for: candidate)
         if existingPriority != candidatePriority {
             return candidatePriority > existingPriority
         }
-        return sortDate(for: candidate) > sortDate(for: existing)
+
+        return candidate.id > existing.id
     }
 
     private static func isLowSignalHistory(_ snapshot: DeploymentSnapshot) -> Bool {

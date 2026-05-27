@@ -101,6 +101,67 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(snapshots[0].duration, 180)
     }
 
+    func testRailwayParsingUsesFallbackTargetWhenResponseOmitsResourceIDs() throws {
+        let json = """
+        {
+          "data": {
+            "deployments": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "dep_srome",
+                    "status": "SUCCESS",
+                    "createdAt": "2026-05-21T10:00:00Z",
+                    "updatedAt": "2026-05-21T10:01:00Z",
+                    "statusUpdatedAt": "2026-05-21T10:01:00Z",
+                    "url": null,
+                    "staticUrl": null,
+                    "diagnosis": null,
+                    "meta": {}
+                  }
+                }
+              ]
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        let firstTarget = MonitoredTarget(
+            projectID: "project_pmf",
+            projectName: "pmf-agent",
+            serviceID: "service_pmf",
+            serviceName: "@pmf-agent/api",
+            environmentID: "env_pmf",
+            environmentName: "production"
+        )
+        let secondTarget = MonitoredTarget(
+            projectID: "project_srome",
+            projectName: "srome",
+            serviceID: "service_srome",
+            serviceName: "@srome/api",
+            environmentID: "env_srome",
+            environmentName: "production"
+        )
+        let account = ProviderAccount(
+            provider: .railway,
+            displayName: "Railway",
+            tokenReference: "token",
+            monitoredTargets: [firstTarget, secondTarget]
+        )
+
+        let snapshots = try RailwayParser.snapshots(
+            from: json,
+            account: account,
+            target: secondTarget,
+            now: Date(timeIntervalSince1970: 1)
+        )
+
+        XCTAssertEqual(snapshots.count, 1)
+        XCTAssertEqual(snapshots[0].projectName, "srome")
+        XCTAssertEqual(snapshots[0].serviceName, "@srome/api")
+        XCTAssertEqual(snapshots[0].environmentName, "production")
+    }
+
     func testNetlifyDeploymentParsing() throws {
         let json = """
         [
