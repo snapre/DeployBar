@@ -64,6 +64,11 @@ final class DeploymentStatusMapperTests: XCTestCase {
         XCTAssertEqual(DeploymentStatusMapper.herokuStatus("pending"), .deploying)
         XCTAssertEqual(DeploymentStatusMapper.herokuStatus("failed"), .failed)
 
+        XCTAssertEqual(DeploymentStatusMapper.flyStatus("running"), .deploying)
+        XCTAssertEqual(DeploymentStatusMapper.flyStatus("succeeded"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.flyStatus("failed"), .failed)
+        XCTAssertEqual(DeploymentStatusMapper.flyStatus("replaced"), .removed)
+
         XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("in_progress"), .deploying)
         XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("success"), .success)
         XCTAssertEqual(DeploymentStatusMapper.githubDeploymentStatus("failure"), .failed)

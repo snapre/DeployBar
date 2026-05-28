@@ -115,6 +115,18 @@ public enum DeploymentStatusMapper {
         }
     }
 
+    public static func flyStatus(_ rawValue: String) -> DeploymentStatus {
+        switch normalized(rawValue) {
+        case "pending", "queued": .queued
+        case "running", "in_progress", "deploying": .deploying
+        case "succeeded", "success", "complete", "completed", "live": .success
+        case "failed", "error": .failed
+        case "cancelled", "canceled": .canceled
+        case "replaced", "inactive", "dead", "removed": .removed
+        default: .unknown
+        }
+    }
+
     public static func githubDeploymentStatus(_ rawValue: String?) -> DeploymentStatus {
         switch normalized(rawValue ?? "") {
         case "queued": .queued

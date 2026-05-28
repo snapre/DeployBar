@@ -77,6 +77,10 @@ struct ProviderLogoView: View {
             Image(systemName: "h.square.fill")
                 .font(.system(size: size * 0.58, weight: .semibold))
                 .foregroundStyle(foregroundColor)
+        case .flyio:
+            Image(systemName: "balloon.fill")
+                .font(.system(size: size * 0.56, weight: .semibold))
+                .foregroundStyle(foregroundColor)
         case .github:
             Image(systemName: "chevron.left.forwardslash.chevron.right")
                 .font(.system(size: size * 0.52, weight: .semibold))
@@ -106,6 +110,8 @@ struct ProviderLogoView: View {
             return Color(red: 0.00, green: 0.50, blue: 1.00)
         case .heroku:
             return Color(red: 0.26, green: 0.00, blue: 0.60)
+        case .flyio:
+            return Color(red: 0.49, green: 0.30, blue: 1.00)
         case .github:
             return colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : .black
         case .gitlab:
@@ -117,7 +123,7 @@ struct ProviderLogoView: View {
         switch provider {
         case .mock:
             return .secondary
-        case .vercel, .railway, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .gitlab:
+        case .vercel, .railway, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .flyio, .gitlab:
             return .white
         case .github:
             return colorScheme == .dark ? .primary : .white
@@ -173,6 +179,8 @@ private extension ProviderID {
             return "digital-ocean"
         case .heroku:
             return "heroku"
+        case .flyio:
+            return "flyio"
         case .github:
             return "github"
         case .gitlab:

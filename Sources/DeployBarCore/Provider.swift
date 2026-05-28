@@ -252,6 +252,13 @@ public extension ProviderID {
                 emptyTargetName: "All Heroku apps",
                 fallbackNames: [.project: "All apps"]
             )
+        case .flyio:
+            ProviderTargetBehavior(
+                displayFields: [.project],
+                matchFields: [.project],
+                emptyTargetName: "All Fly apps",
+                fallbackNames: [.project: "All apps"]
+            )
         case .github, .gitlab:
             ProviderTargetBehavior(
                 displayFields: [.project, .environment],

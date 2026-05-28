@@ -69,6 +69,12 @@ public extension ProviderID {
                 url: "https://dashboard.heroku.com/account",
                 help: "Open Heroku account settings. The API key is listed there for non-SSO accounts."
             )
+        case .flyio:
+            return tokenLink(
+                title: "Create Token",
+                url: "https://fly.io/docs/security/tokens/",
+                help: "Create a Fly.io `FlyV1` token with `fly tokens create readonly` for discovery, or another app/org token for the apps you want to watch."
+            )
         case .github:
             return tokenLink(
                 title: "Create Read Token",

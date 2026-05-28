@@ -9,6 +9,7 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case cloudflarePages
     case digitalOcean
     case heroku
+    case flyio
     case github
     case gitlab
 
@@ -24,6 +25,7 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .cloudflarePages: "Cloudflare Pages"
         case .digitalOcean: "DigitalOcean"
         case .heroku: "Heroku"
+        case .flyio: "Fly.io"
         case .github: "GitHub"
         case .gitlab: "GitLab"
         }

@@ -423,7 +423,7 @@ struct AddProviderTokenView: View {
 
     private var supportsSmartDiscovery: Bool {
         switch provider {
-        case .vercel, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .github, .gitlab:
+        case .vercel, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .flyio, .github, .gitlab:
             true
         case .mock, .railway:
             false

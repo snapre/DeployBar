@@ -554,7 +554,7 @@ private struct AddMonitoredTargetInline: View {
 
     private var supportsGenericSmartDiscovery: Bool {
         switch provider {
-        case .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .github, .gitlab:
+        case .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .flyio, .github, .gitlab:
             true
         case .mock, .vercel, .railway:
             false
@@ -910,6 +910,9 @@ struct TargetInputLabels {
         case .heroku:
             projectID = "App ID"
             projectName = "App name"
+        case .flyio:
+            projectID = "App name"
+            projectName = "Label"
         case .github:
             projectID = "Repository"
             projectName = "Repository label"

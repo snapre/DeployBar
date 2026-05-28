@@ -57,6 +57,7 @@ final class DeploymentStore: ObservableObject {
             CloudflarePagesProvider(),
             DigitalOceanProvider(),
             HerokuProvider(),
+            FlyProvider(),
             GitHubDeploymentsProvider(),
             GitLabDeploymentsProvider()
         ])
@@ -228,6 +229,8 @@ final class DeploymentStore: ObservableObject {
             return await DigitalOceanProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .heroku:
             return await HerokuProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .flyio:
+            return await FlyProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .github:
             return await GitHubDeploymentsProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .gitlab:

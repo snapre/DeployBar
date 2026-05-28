@@ -19,7 +19,7 @@ brew install --cask snapre/tap/deploybar
 - Replace the deployment-dashboard checking loop with one menu bar snapshot.
 - See active, waiting, failed, and healthy deployments in a native popover.
 - Let macOS notify you when a deploy ships, fails, cancels, or is removed.
-- Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
+- Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
 - Run it locally. Tokens stay in Keychain, and non-secret settings stay on your Mac.
 
 The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration.
@@ -44,7 +44,7 @@ The launch build currently contains:
 - mock provider with queued/building/ready/failed snapshots
 - Vercel REST provider for deployment listing and project/environment discovery
 - Railway GraphQL provider for deployment listing and read-only discovery of projects, services, and environments
-- Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, GitHub deployments, and GitLab deployments providers
+- Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub deployments, and GitLab deployments providers
 - refresh scheduling with stale snapshot retention, issue backoff, and faster polling while deployments are live
 - macOS notifications for deployment transitions into ready/success, failed/error/crashed, canceled, or removed states
 - tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
@@ -156,6 +156,12 @@ When no target is configured, DeployBar lists accessible apps and polls recent d
 Data source: Heroku Platform API, `GET https://api.heroku.com/apps` and `GET /apps/{app}/releases`.
 
 Heroku releases are mapped as deployments. Note that releases can include config/add-on changes, not only code deploys.
+
+### Fly.io
+
+Data source: Fly.io GraphQL API, `POST https://api.fly.io/graphql`, listing apps and each app's `releasesUnprocessed` history.
+
+Fly.io releases are mapped as deployments. The GraphQL API is undocumented and unversioned, so schema changes surface as an "API changed" issue rather than silently dropping data. Use a `FlyV1` token from `fly tokens create readonly` for app discovery, or another app/org-scoped token for the apps you want to watch. Legacy `fly auth token` Bearer tokens are still accepted.
 
 ### GitHub Deployments
 

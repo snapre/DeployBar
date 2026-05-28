@@ -621,6 +621,183 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(query["sort"], "desc")
         XCTAssertEqual(query["per_page"], "100")
     }
+
+    func testFlyProviderFetchesReleasesWithBearerTokenAndAppVariable() async throws {
+        let body = """
+        {
+          "data": {
+            "app": {
+              "name": "my-app",
+              "releases": {
+                "nodes": [
+                  {
+                    "id": "rel_123",
+                    "version": 42,
+                    "description": "Deploy image foo",
+                    "reason": null,
+                    "status": "succeeded",
+                    "stable": true,
+                    "createdAt": "2026-05-21T10:00:00Z",
+                    "user": { "email": "dev@example.com" }
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = FlyProvider(client: client, limit: 5)
+        let account = ProviderAccount(
+            provider: .flyio,
+            displayName: "Fly.io",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "my-app", projectName: "my-app")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "fly_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].status, .success)
+        XCTAssertEqual(result.snapshots[0].projectName, "my-app")
+        XCTAssertEqual(result.snapshots[0].serviceName, "release v42")
+        XCTAssertEqual(result.snapshots[0].actor, "dev@example.com")
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer fly_secret")
+
+        let bodyObject = try JSONSerialization.jsonObject(with: requests[0].httpBody!) as! [String: Any]
+        let variables = bodyObject["variables"] as! [String: Any]
+        XCTAssertEqual(variables["appName"] as? String, "my-app")
+        XCTAssertEqual(variables["first"] as? Int, 5)
+    }
+
+    func testFlyProviderUsesFlyV1AuthorizationForMacaroonToken() async {
+        let body = """
+        { "data": { "app": { "name": "my-app", "releases": { "nodes": [] } } } }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = FlyProvider(client: client)
+        let account = ProviderAccount(
+            provider: .flyio,
+            displayName: "Fly.io",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "my-app", projectName: "my-app")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "FlyV1 fm2_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "FlyV1 fm2_secret")
+    }
+
+    func testFlyProviderListsAppsWhenNoTargetsConfigured() async throws {
+        let appsBody = """
+        {
+          "data": {
+            "apps": {
+              "nodes": [
+                { "id": "app_1", "name": "alpha" },
+                { "id": "app_2", "name": "beta" }
+              ]
+            }
+          }
+        }
+        """.data(using: .utf8)!
+        let releasesBody = """
+        { "data": { "app": { "name": "alpha", "releases": { "nodes": [] } } } }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: appsBody),
+            HTTPResponse(statusCode: 200, data: releasesBody),
+            HTTPResponse(statusCode: 200, data: releasesBody)
+        ])
+        let provider = FlyProvider(client: client)
+        let account = ProviderAccount(provider: .flyio, displayName: "Fly.io", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "fly_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(requests.count, 3)
+    }
+
+    func testFlyProviderSurfacesGraphQLError() async {
+        let body = """
+        { "errors": [ { "message": "You must be authenticated to view this." } ] }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = FlyProvider(client: client)
+        let account = ProviderAccount(
+            provider: .flyio,
+            displayName: "Fly.io",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "my-app", projectName: "my-app")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "fly_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.kind, .authentication)
+        XCTAssertFalse(result.issues.first?.message.contains("fly_secret") ?? true)
+    }
+
+    func testFlyDiscoveryListsApps() async throws {
+        let body = """
+        {
+          "data": {
+            "apps": {
+              "nodes": [
+                { "id": "app_1", "name": "alpha" },
+                { "id": "app_2", "name": "beta" }
+              ]
+            }
+          }
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = FlyProvider(client: client)
+        let account = ProviderAccount(provider: .flyio, displayName: "Fly.io", tokenReference: "token")
+
+        let result = await provider.discoverTargets(token: "fly_secret", account: account)
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.targets.map(\.projectID), ["alpha", "beta"])
+        XCTAssertEqual(result.targets.map(\.projectName), ["alpha", "beta"])
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer fly_secret")
+    }
+
+    func testFlyDiscoveryListsAppsEvenWhenTargetsAlreadyConfigured() async throws {
+        let body = """
+        {
+          "data": {
+            "apps": {
+              "nodes": [
+                { "id": "app_1", "name": "alpha" },
+                { "id": "app_2", "name": "beta" }
+              ]
+            }
+          }
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [HTTPResponse(statusCode: 200, data: body)])
+        let provider = FlyProvider(client: client)
+        let account = ProviderAccount(
+            provider: .flyio,
+            displayName: "Fly.io",
+            tokenReference: "token",
+            monitoredTargets: [MonitoredTarget(projectID: "existing", projectName: "existing")]
+        )
+
+        let result = await provider.discoverTargets(token: "fly_secret", account: account)
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.targets.map(\.projectID), ["alpha", "beta"])
+        XCTAssertEqual(requests.count, 1)
+    }
 }
 
 private final class ThrowingHTTPClient: HTTPClient, @unchecked Sendable {

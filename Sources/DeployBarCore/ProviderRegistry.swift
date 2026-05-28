@@ -106,6 +106,16 @@ public struct ProviderRegistry: Sendable {
             dashboardURL: URL(string: "https://dashboard.heroku.com/apps")
         ),
         ProviderDescriptor(
+            id: .flyio,
+            displayName: "Fly.io",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: false,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://fly.io/dashboard")
+        ),
+        ProviderDescriptor(
             id: .github,
             displayName: "GitHub",
             defaultEnabled: false,
@@ -136,6 +146,7 @@ public struct ProviderRegistry: Sendable {
         .cloudflarePages,
         .digitalOcean,
         .heroku,
+        .flyio,
         .github,
         .gitlab
     ]
