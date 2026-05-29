@@ -78,11 +78,29 @@ final class MenuBarController {
     }
 
     private func preferredPopoverSize(relativeTo button: NSStatusBarButton?) -> NSSize {
-        let screen = button?.window?.screen ?? NSScreen.main
-        let visibleHeight = screen?.visibleFrame.height ?? 650
-        let maxHeight = floor(visibleHeight)
         let contentHeight = estimatedPopoverContentHeight()
+        let maxHeight = availablePopoverContentHeight(relativeTo: button)
         return NSSize(width: DeploymentPopoverLayout.preferredWidth, height: min(maxHeight, contentHeight))
+    }
+
+    private func availablePopoverContentHeight(relativeTo button: NSStatusBarButton?) -> CGFloat {
+        let screen = button?.window?.screen ?? NSScreen.main
+        guard let visibleFrame = screen?.visibleFrame else {
+            return 650 - DeploymentPopoverLayout.popoverChromeHeightAllowance
+        }
+
+        let availableOuterHeight: CGFloat
+        if let buttonWindow = button?.window {
+            let anchorY = min(buttonWindow.frame.minY, visibleFrame.maxY)
+            availableOuterHeight = anchorY - visibleFrame.minY
+        } else {
+            availableOuterHeight = visibleFrame.height
+        }
+
+        return max(
+            DeploymentPopoverLayout.minimumUsableContentHeight,
+            floor(availableOuterHeight - DeploymentPopoverLayout.popoverChromeHeightAllowance)
+        )
     }
 
     private func estimatedPopoverContentHeight() -> CGFloat {

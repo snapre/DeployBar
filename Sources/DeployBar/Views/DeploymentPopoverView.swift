@@ -11,6 +11,8 @@ enum DeploymentPopoverLayout {
     static let issueStripHeight: CGFloat = 54
     static let contentHorizontalPadding: CGFloat = 12
     static let footerActionContentHorizontalPadding: CGFloat = 8
+    static let popoverChromeHeightAllowance: CGFloat = 44
+    static let minimumUsableContentHeight: CGFloat = 360
 }
 
 struct DeploymentPopoverView: View {
