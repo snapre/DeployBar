@@ -477,6 +477,32 @@
         white-space: nowrap;
       }
 
+      .producthunt-badge {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        margin-top: 16px;
+        border-radius: 8px;
+        transition: transform 160ms ease, box-shadow 160ms ease;
+      }
+
+      .producthunt-badge:hover,
+      .producthunt-badge:focus-visible {
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      .producthunt-badge:focus-visible {
+        box-shadow: 0 0 0 4px var(--focus-ring);
+      }
+
+      .producthunt-badge img {
+        display: block;
+        width: 250px;
+        max-width: 100%;
+        height: 54px;
+      }
+
       .meta {
         margin: 18px 0 0;
         color: var(--muted);
@@ -1212,6 +1238,7 @@
 
         .actions,
         .install-line,
+        .producthunt-badge,
         .meta {
           max-width: 100%;
         }
@@ -1290,6 +1317,10 @@
           font-size: 0.78rem;
           white-space: normal;
           overflow-wrap: anywhere;
+        }
+
+        .producthunt-badge {
+          justify-content: center;
         }
 
         .hero .meta {
@@ -1461,6 +1492,9 @@
             <span>Install</span>
             <code>brew install --cask snapre/tap/deploybar</code>
           </div>
+          <a class="producthunt-badge" href="https://www.producthunt.com/products/deploybar?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-deploybar" target="_blank" rel="noopener noreferrer" aria-label="Find DeployBar on Product Hunt">
+            <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1159783&amp;theme=light&amp;t=1780306741230" alt="DeployBar - Monitor cloud deploys from your Mac menu bar | Product Hunt" width="250" height="54">
+          </a>
           <p class="meta">Free and open source &middot; signed and notarized &middot; Homebrew Cask &middot; no DeployBar backend</p>
         </div>
 
