@@ -8,6 +8,7 @@ final class DeploymentStore: ObservableObject {
     @Published private(set) var issues: [ProviderIssue] = []
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastRefreshAt: Date?
+    @Published private(set) var notificationAuthorization = NotificationAuthorizationSnapshot(state: .notDetermined)
     @Published var settings: DeployBarSettings
 
     let providerDescriptors = ProviderRegistry.defaultDescriptors.filter { $0.id != .mock }
@@ -67,6 +68,27 @@ final class DeploymentStore: ObservableObject {
     func start() {
         refresh(manual: true)
         restartScheduler()
+    }
+
+    func prepareNotifications() {
+        Task {
+            let currentSnapshot = await notificationController.authorizationSnapshot()
+            notificationAuthorization = currentSnapshot
+            guard currentSnapshot.state == .notDetermined else { return }
+            notificationAuthorization = await notificationController.requestAuthorization()
+        }
+    }
+
+    func refreshNotificationAuthorizationStatus() {
+        Task {
+            notificationAuthorization = await notificationController.authorizationSnapshot()
+        }
+    }
+
+    func requestNotificationAuthorization() {
+        Task {
+            notificationAuthorization = await notificationController.requestAuthorization()
+        }
     }
 
     func addAccount(_ account: ProviderAccount, token: String) {

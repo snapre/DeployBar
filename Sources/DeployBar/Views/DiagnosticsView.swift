@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiagnosticsView: View {
     @ObservedObject var store: DeploymentStore
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -30,6 +31,16 @@ struct DiagnosticsView: View {
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
+                GridRow {
+                    Text("Notifications")
+                    notificationStatus
+                }
+            }
+
+            if let errorMessage = store.notificationAuthorization.errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
 
             if !store.issues.isEmpty {
@@ -46,6 +57,60 @@ struct DiagnosticsView: View {
             }
 
             Spacer()
+        }
+        .onAppear {
+            store.refreshNotificationAuthorizationStatus()
+        }
+    }
+
+    @ViewBuilder
+    private var notificationStatus: some View {
+        HStack(spacing: 8) {
+            Text(store.notificationAuthorization.state.displayName)
+                .foregroundStyle(.secondary)
+
+            switch store.notificationAuthorization.state {
+            case .notDetermined:
+                Button {
+                    store.requestNotificationAuthorization()
+                } label: {
+                    Label("Enable", systemImage: "bell.badge")
+                }
+                .controlSize(.small)
+            case .denied:
+                Button {
+                    openNotificationSettings()
+                } label: {
+                    Label("Open Settings", systemImage: "gearshape")
+                }
+                .controlSize(.small)
+            case .authorized, .provisional, .ephemeral, .unknown:
+                EmptyView()
+            }
+        }
+    }
+
+    private func openNotificationSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") else { return }
+        openURL(url)
+    }
+}
+
+private extension NotificationAuthorizationState {
+    var displayName: String {
+        switch self {
+        case .notDetermined:
+            "Not requested"
+        case .denied:
+            "Denied"
+        case .authorized:
+            "Allowed"
+        case .provisional:
+            "Provisional"
+        case .ephemeral:
+            "Ephemeral"
+        case .unknown:
+            "Unknown"
         }
     }
 }

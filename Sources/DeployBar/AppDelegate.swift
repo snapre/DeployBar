@@ -18,17 +18,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(.accessory)
 
-        let notificationCenter = UNUserNotificationCenter.current()
-        notificationCenter.delegate = notificationDelegate
-        Task.detached {
-            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
-        }
+        UNUserNotificationCenter.current().delegate = notificationDelegate
 
         let settingsWindowController = SettingsWindowController(store: store, updateController: updateController)
         self.settingsWindowController = settingsWindowController
         menuBarController = MenuBarController(store: store, updateController: updateController) { tab in
             settingsWindowController.show(tab: tab)
         }
+        store.prepareNotifications()
         store.start()
     }
 

@@ -2,7 +2,7 @@
 
 DeployBar is for the moment after you hit deploy and start checking too many tabs.
 
-If one service is building on Vercel, another release is rolling through Heroku, and a side project is waiting on Railway or GitHub Deployments, you should not need a row of dashboards open just to know whether anything needs attention. DeployBar turns that refresh loop into one native macOS menu bar status, one compact popover, and notifications only when a deployment becomes ready, fails, cancels, or disappears.
+If one service is building on Vercel, another release is rolling through Heroku, and a side project is waiting on Railway or GitHub Deployments, you should not need a row of dashboards open just to know whether anything needs attention. DeployBar turns that refresh loop into one native macOS menu bar status, one compact popover, and notifications when a deployment starts, ships, fails, cancels, or disappears.
 
 This is the first public launch of DeployBar: a free, open-source, local-first Mac app built in Swift. There is no Electron shell, no DeployBar backend service, and no hosted credential sync.
 
@@ -18,7 +18,7 @@ brew install --cask snapre/tap/deploybar
 
 - Replace the deployment-dashboard checking loop with one menu bar snapshot.
 - See active, waiting, failed, and healthy deployments in a native popover.
-- Let macOS notify you when a deploy ships, fails, cancels, or is removed.
+- Let macOS notify you when a deploy starts, ships, fails, cancels, or is removed.
 - Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
 - Run it locally. Tokens stay in Keychain, and non-secret settings stay on your Mac.
 
@@ -46,7 +46,7 @@ The launch build currently contains:
 - Railway GraphQL provider for deployment listing and read-only discovery of projects, services, and environments
 - Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub deployments, and GitLab deployments providers
 - refresh scheduling with stale snapshot retention, issue backoff, and faster polling while deployments are live
-- macOS notifications for deployment transitions into ready/success, failed/error/crashed, canceled, or removed states
+- macOS notifications for deployment start, ready/success, failed/error/crashed, canceled, or removed states
 - tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
 
 The next implementation phase is deeper provider diagnostics, optional failure log tailing, and more polish around account/resource discovery.
