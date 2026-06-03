@@ -1,4 +1,5 @@
 import DeployBarCore
+import Foundation
 import OSLog
 import UserNotifications
 
@@ -53,6 +54,21 @@ struct NotificationController {
         }
     }
 
+    func sendTestNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "DeployBar notifications are working"
+        content.body = "macOS can show DeployBar alerts."
+        content.sound = .default
+        content.threadIdentifier = "deploybar"
+
+        let request = UNNotificationRequest(
+            identifier: "deploybar.test.\(UUID().uuidString)",
+            content: content,
+            trigger: nil
+        )
+        add(request: request)
+    }
+
     func notifyTransitions(oldStatuses: [String: DeploymentStatus], snapshots: [DeploymentSnapshot]) {
         guard !oldStatuses.isEmpty else { return }
 
@@ -69,10 +85,17 @@ struct NotificationController {
                 content: content,
                 trigger: nil
             )
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error {
-                    Self.logger.error("Notification delivery failed: \(error.localizedDescription, privacy: .public)")
-                }
+            add(request: request)
+        }
+    }
+
+    private func add(request: UNNotificationRequest) {
+        let identifier = request.identifier
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                Self.logger.error("Notification delivery failed: \(error.localizedDescription, privacy: .public)")
+            } else {
+                Self.logger.info("Notification submitted: \(identifier, privacy: .public)")
             }
         }
     }

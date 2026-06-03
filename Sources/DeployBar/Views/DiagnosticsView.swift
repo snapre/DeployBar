@@ -84,7 +84,14 @@ struct DiagnosticsView: View {
                     Label("Open Settings", systemImage: "gearshape")
                 }
                 .controlSize(.small)
-            case .authorized, .provisional, .ephemeral, .unknown:
+            case .authorized, .provisional, .ephemeral:
+                Button {
+                    store.sendTestNotification()
+                } label: {
+                    Label("Test", systemImage: "bell")
+                }
+                .controlSize(.small)
+            case .unknown:
                 EmptyView()
             }
         }

@@ -91,6 +91,10 @@ final class DeploymentStore: ObservableObject {
         }
     }
 
+    func sendTestNotification() {
+        notificationController.sendTestNotification()
+    }
+
     func addAccount(_ account: ProviderAccount, token: String) {
         do {
             try tokenStore.save(token: token, for: account)
