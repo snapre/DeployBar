@@ -1,3 +1,4 @@
+import AppKit
 import DeployBarCore
 import Foundation
 import SwiftUI
@@ -22,6 +23,8 @@ final class DeploymentStore: ObservableObject {
     private var previousStatuses: [String: DeploymentStatus] = [:]
     private var consecutiveFailureCount = 0
     private var pendingRefresh = false
+    private var automaticRefreshSuspensionReasons: Set<AutomaticRefreshSuspensionReason> = []
+    private var lifecycleObservers: [NSObjectProtocol] = []
 
     var globalSeverity: DeploymentSeverity {
         let snapshotSeverity = DeploymentSnapshotFocus.focused(snapshots).map(\.severity).max() ?? .healthy
@@ -66,6 +69,7 @@ final class DeploymentStore: ObservableObject {
     }
 
     func start() {
+        startLifecycleObservers()
         refresh(manual: true)
         restartScheduler()
     }
@@ -323,6 +327,8 @@ final class DeploymentStore: ObservableObject {
 
     private func restartScheduler() {
         schedulerTask?.cancel()
+        schedulerTask = nil
+        guard automaticRefreshSuspensionReasons.isEmpty else { return }
         guard let interval = settings.refreshCadence.interval else { return }
 
         schedulerTask = Task { [weak self] in
@@ -330,7 +336,12 @@ final class DeploymentStore: ObservableObject {
                 let delay = await MainActor.run {
                     self?.nextSchedulerDelay(defaultInterval: interval) ?? interval
                 }
-                try? await Task.sleep(for: .seconds(delay))
+                do {
+                    try await Task.sleep(for: .seconds(delay))
+                } catch {
+                    break
+                }
+                guard !Task.isCancelled else { break }
                 await MainActor.run {
                     self?.refresh()
                 }
@@ -361,6 +372,89 @@ final class DeploymentStore: ObservableObject {
     }
 
     private static let liveDeploymentRefreshInterval: TimeInterval = 10
+}
+
+private extension DeploymentStore {
+    enum AutomaticRefreshSuspensionReason: Hashable {
+        case screenLocked
+        case screensAsleep
+        case systemSleep
+    }
+
+    func startLifecycleObservers() {
+        guard lifecycleObservers.isEmpty else { return }
+
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        lifecycleObservers.append(
+            workspaceCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.suspendAutomaticRefresh(for: .systemSleep)
+                }
+            }
+        )
+        lifecycleObservers.append(
+            workspaceCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.resumeAutomaticRefresh(for: .systemSleep, refreshOnResume: true)
+                }
+            }
+        )
+        lifecycleObservers.append(
+            workspaceCenter.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.suspendAutomaticRefresh(for: .screensAsleep)
+                }
+            }
+        )
+        lifecycleObservers.append(
+            workspaceCenter.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.resumeAutomaticRefresh(for: .screensAsleep, refreshOnResume: true)
+                }
+            }
+        )
+
+        let distributedCenter = DistributedNotificationCenter.default()
+        lifecycleObservers.append(
+            distributedCenter.addObserver(
+                forName: Notification.Name("com.apple.screenIsLocked"),
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.suspendAutomaticRefresh(for: .screenLocked)
+                }
+            }
+        )
+        lifecycleObservers.append(
+            distributedCenter.addObserver(
+                forName: Notification.Name("com.apple.screenIsUnlocked"),
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.resumeAutomaticRefresh(for: .screenLocked, refreshOnResume: true)
+                }
+            }
+        )
+    }
+
+    func suspendAutomaticRefresh(for reason: AutomaticRefreshSuspensionReason) {
+        let wasRunning = automaticRefreshSuspensionReasons.isEmpty
+        automaticRefreshSuspensionReasons.insert(reason)
+        guard wasRunning else { return }
+        schedulerTask?.cancel()
+        schedulerTask = nil
+    }
+
+    func resumeAutomaticRefresh(for reason: AutomaticRefreshSuspensionReason, refreshOnResume: Bool) {
+        automaticRefreshSuspensionReasons.remove(reason)
+        guard automaticRefreshSuspensionReasons.isEmpty else { return }
+        restartScheduler()
+        if refreshOnResume, settings.refreshCadence.interval != nil {
+            refresh()
+        }
+    }
 }
 
 #if DEBUG
