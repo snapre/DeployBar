@@ -39,7 +39,7 @@ struct DeploymentPopoverView: View {
                 .layoutPriority(1)
             } else {
                 if usesScrollView {
-                    ScrollView {
+                    ScrollView(showsIndicators: false) {
                         snapshotContent
                     }
                     .layoutPriority(1)
