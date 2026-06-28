@@ -185,7 +185,9 @@ public enum CloudflarePagesParser {
     public static func snapshots(from data: Data, account: ProviderAccount, target: MonitoredTarget, now: Date = Date()) throws -> [DeploymentSnapshot] {
         let response = try JSONDecoder.deployBar.decode(CloudflarePagesResponse<[CloudflarePagesDeployment]>.self, from: data)
         return response.result.map { deployment in
-            let status = DeploymentStatusMapper.cloudflarePagesStatus(deployment.latestStage?.status ?? deployment.stageStatus ?? deployment.status ?? "")
+            let status = deployment.isSkipped == true
+                ? DeploymentStatus.skipped
+                : DeploymentStatusMapper.cloudflarePagesStatus(deployment.latestStage?.status ?? deployment.stageStatus ?? deployment.status ?? "")
             let metadata = deployment.deploymentTrigger?.metadata
             let finishedAt = finishedAt(status: status, deployment: deployment)
             let projectName = deployment.projectName ?? target.projectName ?? target.projectID ?? "Pages Project"
@@ -299,6 +301,7 @@ private struct CloudflarePagesDeployment: Decodable {
     var deploymentTrigger: CloudflarePagesDeploymentTrigger?
     var stageStatus: String?
     var status: String?
+    var isSkipped: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -313,6 +316,7 @@ private struct CloudflarePagesDeployment: Decodable {
         case deploymentTrigger = "deployment_trigger"
         case stageStatus = "stage_status"
         case status
+        case isSkipped = "is_skipped"
     }
 }
 

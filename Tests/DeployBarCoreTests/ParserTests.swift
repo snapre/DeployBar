@@ -302,6 +302,47 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(snapshots[0].duration, 120)
     }
 
+    func testCloudflarePagesSkippedPreviewDeploymentParsing() throws {
+        let json = """
+        {
+          "success": true,
+          "result": [
+            {
+              "id": "pages_dep_skipped",
+              "project_name": "web",
+              "environment": "preview",
+              "url": "https://preview.pages.dev",
+              "created_on": "2026-06-28T16:29:23Z",
+              "modified_on": "2026-06-28T16:29:23Z",
+              "is_skipped": true,
+              "latest_stage": {
+                "name": "queued",
+                "status": "idle",
+                "ended_on": null
+              },
+              "deployment_trigger": {
+                "metadata": {
+                  "branch": "copilot/apps-ios-admin",
+                  "commit_hash": "da113c7",
+                  "commit_message": "fix: app config and env"
+                }
+              }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let account = ProviderAccount(provider: .cloudflarePages, displayName: "Cloudflare", tokenReference: "token")
+        let target = MonitoredTarget(projectName: "web")
+        let snapshots = try CloudflarePagesParser.snapshots(from: json, account: account, target: target, now: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(snapshots.count, 1)
+        XCTAssertEqual(snapshots[0].status, .skipped)
+        XCTAssertEqual(snapshots[0].severity, .healthy)
+        XCTAssertEqual(snapshots[0].branch, "copilot/apps-ios-admin")
+        XCTAssertEqual(snapshots[0].commitSha, "da113c7")
+    }
+
     func testDigitalOceanDeploymentParsing() throws {
         let json = """
         {
