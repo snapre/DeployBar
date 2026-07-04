@@ -57,7 +57,11 @@ final class MenuBarController {
 
     private func updateIcon() {
         guard let button = statusItem.button else { return }
-        button.image = StatusIconRenderer.image(for: store.globalSeverity, isRefreshing: store.isRefreshing)
+        button.image = StatusIconRenderer.image(
+            for: store.globalSeverity,
+            isRefreshing: store.isRefreshing,
+            appearance: button.effectiveAppearance
+        )
         button.toolTip = "DeployBar - \(store.globalSeverity.displayName)"
     }
 
