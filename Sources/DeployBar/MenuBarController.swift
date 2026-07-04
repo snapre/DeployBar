@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import DeployBarCore
+import QuartzCore
 import SwiftUI
 
 @MainActor
@@ -9,6 +10,7 @@ final class MenuBarController {
     private let popover = NSPopover()
     private let store: DeploymentStore
     private let updateController: SoftwareUpdateController
+    private let statusBadgeLayer = CALayer()
     private var cancellables: Set<AnyCancellable> = []
 
     init(
@@ -52,17 +54,70 @@ final class MenuBarController {
         guard let button = statusItem.button else { return }
         button.action = #selector(togglePopover(_:))
         button.target = self
-        button.imagePosition = .imageLeading
+        button.imagePosition = .imageOnly
+        button.image = StatusIconRenderer.templateImage()
+        button.wantsLayer = true
+        button.layer?.masksToBounds = false
+        statusBadgeLayer.masksToBounds = true
+        button.layer?.addSublayer(statusBadgeLayer)
+
+        button.postsFrameChangedNotifications = true
+        NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification, object: button)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.layoutStatusBadge(in: button)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func updateIcon() {
         guard let button = statusItem.button else { return }
-        button.image = StatusIconRenderer.image(
-            for: store.globalSeverity,
-            isRefreshing: store.isRefreshing,
-            appearance: button.effectiveAppearance
-        )
+        if button.image == nil {
+            button.image = StatusIconRenderer.templateImage()
+        }
+        updateStatusBadge(in: button)
         button.toolTip = "DeployBar - \(store.globalSeverity.displayName)"
+    }
+
+    private func updateStatusBadge(in button: NSStatusBarButton) {
+        let color = StatusIconRenderer.badgeColor(for: store.globalSeverity, isRefreshing: store.isRefreshing)
+        let scale = button.window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        statusBadgeLayer.backgroundColor = color.cgColor
+        statusBadgeLayer.cornerRadius = StatusIconRenderer.badgeFrame.width / 2
+        statusBadgeLayer.contentsScale = scale
+        statusBadgeLayer.frame = statusBadgeFrame(in: button)
+        CATransaction.commit()
+    }
+
+    private func layoutStatusBadge(in button: NSStatusBarButton) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        statusBadgeLayer.frame = statusBadgeFrame(in: button)
+        CATransaction.commit()
+    }
+
+    private func statusBadgeFrame(in button: NSStatusBarButton) -> CGRect {
+        let iconSize = StatusIconRenderer.iconSize
+        let badgeFrame = StatusIconRenderer.badgeFrame
+        let iconOrigin = NSPoint(
+            x: floor((button.bounds.width - iconSize.width) / 2),
+            y: floor((button.bounds.height - iconSize.height) / 2)
+        )
+        let badgeY = button.isFlipped
+            ? iconOrigin.y + iconSize.height - badgeFrame.maxY
+            : iconOrigin.y + badgeFrame.minY
+
+        return CGRect(
+            x: iconOrigin.x + badgeFrame.minX,
+            y: badgeY,
+            width: badgeFrame.width,
+            height: badgeFrame.height
+        )
     }
 
     @objc private func togglePopover(_ sender: NSStatusBarButton) {
