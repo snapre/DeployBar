@@ -1,14 +1,23 @@
 import SwiftUI
 
+enum AppLogoVariant {
+    case adaptive
+    case light
+    case dark
+}
+
 struct AppLogoView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var size: CGFloat = 28
     var statusColor: Color?
+    var variant: AppLogoVariant = .adaptive
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ZStack {
                 Circle()
-                    .fill(.primary)
+                    .fill(markColor)
 
                 DeployBarGlyph()
                     .stroke(
@@ -38,6 +47,20 @@ struct AppLogoView: View {
         .frame(width: size, height: size)
         .accessibilityLabel("DeployBar")
     }
+
+    private var markColor: Color {
+        switch variant {
+        case .adaptive:
+            colorScheme == .dark ? Self.lightMark : Self.darkMark
+        case .light:
+            Self.lightMark
+        case .dark:
+            Self.darkMark
+        }
+    }
+
+    private static let darkMark = Color(red: 17.0 / 255.0, green: 24.0 / 255.0, blue: 20.0 / 255.0)
+    private static let lightMark = Color(red: 244.0 / 255.0, green: 250.0 / 255.0, blue: 246.0 / 255.0)
 }
 
 private struct DeployBarGlyph: Shape {

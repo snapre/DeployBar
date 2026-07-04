@@ -1,0 +1,11 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DeployBar dark logo</title>
+  <desc id="desc">A dark DeployBar mark for light backgrounds, with a deployment status path cut out of the center.</desc>
+  <defs>
+    <mask id="glyph-cutout">
+      <rect width="1024" height="1024" fill="white"/>
+      <path d="M302 560L395 418L488 560L598 392H732" stroke="black" stroke-width="86" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <circle cx="512" cy="512" r="360" fill="#111814" mask="url(#glyph-cutout)"/>
+</svg>

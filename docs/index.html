@@ -9,6 +9,8 @@
     >
     <meta name="theme-color" content="#f5f7f0">
     <title>DeployBar - stop checking deployment dashboards</title>
+    <link rel="icon" type="image/svg+xml" href="assets/deploybar-logo-dark.svg" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/svg+xml" href="assets/deploybar-logo-light.svg" media="(prefers-color-scheme: dark)">
     <link rel="icon" href="assets/deploybar-icon.png">
     <script>
       (() => {
@@ -49,6 +51,7 @@
         --focus-ring: rgba(37, 110, 198, 0.38);
         --status-pulse: rgba(37, 110, 198, 0.26);
         --app-icon-filter: none;
+        --brand-logo: url("assets/deploybar-logo-dark.svg");
         --brand-vercel: #111814;
         --brand-railway: #0b0d0e;
         --brand-netlify: #00ad9f;
@@ -95,6 +98,7 @@
         --focus-ring: rgba(126, 178, 255, 0.42);
         --status-pulse: rgba(126, 178, 255, 0.24);
         --app-icon-filter: invert(1);
+        --brand-logo: url("assets/deploybar-logo-light.svg");
         --brand-vercel: #f4faf6;
         --brand-railway: #eef6f0;
         --brand-heroku: #a978ff;
@@ -135,6 +139,7 @@
           --focus-ring: rgba(126, 178, 255, 0.42);
           --status-pulse: rgba(126, 178, 255, 0.24);
           --app-icon-filter: invert(1);
+          --brand-logo: url("assets/deploybar-logo-light.svg");
           --brand-vercel: #f4faf6;
           --brand-railway: #eef6f0;
           --brand-heroku: #a978ff;
@@ -235,11 +240,20 @@
         height: 30px;
         display: flex;
         align-items: center;
+        gap: 7px;
         flex: none;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
         font-size: 13px;
         font-weight: 600;
         line-height: 30px;
+      }
+
+      .brand-mark {
+        width: 18px;
+        height: 18px;
+        display: block;
+        flex: none;
+        background: var(--brand-logo) center / contain no-repeat;
       }
 
       .nav-links {
@@ -1440,6 +1454,7 @@
         <div class="menu-left">
           <a class="apple-menu" href="#top" aria-label="DeployBar home">&#63743;</a>
           <a class="brand" href="#top" aria-label="DeployBar home">
+            <span class="brand-mark" aria-hidden="true"></span>
             <span>DeployBar</span>
           </a>
           <div class="nav-links">
