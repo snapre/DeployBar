@@ -524,15 +524,21 @@
         display: none;
       }
 
+      .copy-check[hidden],
+      .install-line:not([data-copied="true"]) .copy-check {
+        display: none !important;
+      }
+
+      .copy-box[hidden],
       .install-line[data-copied="true"] .copy-box {
-        display: none;
+        display: none !important;
       }
 
       .install-line[data-copied="true"] .copy-glyph {
         color: var(--green);
       }
 
-      .install-line[data-copied="true"] .copy-check {
+      .install-line[data-copied="true"] .copy-check:not([hidden]) {
         display: block;
       }
 
