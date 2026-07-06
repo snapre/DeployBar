@@ -528,6 +528,10 @@
         display: none;
       }
 
+      .install-line[data-copied="true"] .copy-glyph {
+        color: var(--green);
+      }
+
       .install-line[data-copied="true"] .copy-check {
         display: block;
       }
@@ -1558,11 +1562,11 @@
             <span class="install-label">Install</span>
             <code>brew install --cask snapre/tap/deploybar</code>
             <span class="copy-glyph" aria-hidden="true">
-              <svg class="copy-box" viewBox="0 0 24 24" fill="none">
+              <svg class="copy-box" data-copy-icon viewBox="0 0 24 24" fill="none">
                 <rect x="8" y="8" width="10" height="10" rx="2" stroke="currentColor" stroke-width="2"></rect>
                 <path d="M6 14H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
               </svg>
-              <svg class="copy-check" viewBox="0 0 24 24" fill="none">
+              <svg class="copy-check" data-copy-success viewBox="0 0 24 24" fill="none" hidden>
                 <path d="M5 12.5l4.2 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
             </span>
@@ -1848,11 +1852,25 @@ open .build/DeployBar.app</code></pre>
         };
 
         const showCopiedState = (button) => {
+          const copyIcon = button.querySelector("[data-copy-icon]");
+          const copySuccess = button.querySelector("[data-copy-success]");
           window.clearTimeout(copyResetTimer);
+          if (copyIcon) {
+            copyIcon.hidden = true;
+          }
+          if (copySuccess) {
+            copySuccess.hidden = false;
+          }
           button.dataset.copied = "true";
           button.setAttribute("aria-label", "Copied Homebrew install command");
           button.setAttribute("title", "Copied");
           copyResetTimer = window.setTimeout(() => {
+            if (copyIcon) {
+              copyIcon.hidden = false;
+            }
+            if (copySuccess) {
+              copySuccess.hidden = true;
+            }
             button.dataset.copied = "false";
             button.setAttribute("aria-label", "Copy Homebrew install command");
             button.setAttribute("title", "Copy command");
