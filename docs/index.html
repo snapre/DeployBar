@@ -1845,14 +1845,21 @@ open .build/DeployBar.app</code></pre>
           textarea.style.opacity = "0";
           document.body.appendChild(textarea);
           textarea.select();
-          document.execCommand("copy");
+          const copied = document.execCommand("copy");
           textarea.remove();
+          if (!copied) {
+            throw new Error("Copy command was not accepted.");
+          }
         };
 
         const copyText = async (text) => {
           if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-            return;
+            try {
+              await navigator.clipboard.writeText(text);
+              return;
+            } catch {
+              // Fall back for browsers that expose Clipboard API but deny writes.
+            }
           }
           writeClipboardFallback(text);
         };
@@ -1862,20 +1869,20 @@ open .build/DeployBar.app</code></pre>
           const copySuccess = button.querySelector("[data-copy-success]");
           window.clearTimeout(copyResetTimer);
           if (copyIcon) {
-            copyIcon.hidden = true;
+            copyIcon.setAttribute("hidden", "");
           }
           if (copySuccess) {
-            copySuccess.hidden = false;
+            copySuccess.removeAttribute("hidden");
           }
           button.dataset.copied = "true";
           button.setAttribute("aria-label", "Copied Homebrew install command");
           button.setAttribute("title", "Copied");
           copyResetTimer = window.setTimeout(() => {
             if (copyIcon) {
-              copyIcon.hidden = false;
+              copyIcon.removeAttribute("hidden");
             }
             if (copySuccess) {
-              copySuccess.hidden = true;
+              copySuccess.setAttribute("hidden", "");
             }
             button.dataset.copied = "false";
             button.setAttribute("aria-label", "Copy Homebrew install command");
