@@ -33,23 +33,31 @@ let icons: [(name: String, pixels: Int)] = [
     ("icon_512x512@2x.png", 1024)
 ]
 
+var pngDataByName: [String: Data] = [:]
 for icon in icons {
     let data = try renderDeployBarIcon(pixelSize: icon.pixels)
+    pngDataByName[icon.name] = data
     try data.write(to: iconsetURL.appendingPathComponent(icon.name), options: .atomic)
 }
 
 try? fileManager.removeItem(at: icnsURL)
-
-let process = Process()
-process.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
-process.arguments = ["-c", "icns", iconsetURL.path, "-o", icnsURL.path]
-try process.run()
-process.waitUntilExit()
-
-guard process.terminationStatus == 0 else {
-    fputs("iconutil failed with status \(process.terminationStatus).\n", stderr)
-    exit(process.terminationStatus)
-}
+try writeICNS(
+    entries: [
+        ("icp4", pngDataByName["icon_16x16.png"]),
+        ("ic11", pngDataByName["icon_16x16@2x.png"]),
+        ("icp5", pngDataByName["icon_32x32.png"]),
+        ("ic12", pngDataByName["icon_32x32@2x.png"]),
+        ("ic07", pngDataByName["icon_128x128.png"]),
+        ("ic13", pngDataByName["icon_128x128@2x.png"]),
+        ("ic08", pngDataByName["icon_256x256.png"]),
+        ("ic14", pngDataByName["icon_256x256@2x.png"]),
+        ("ic09", pngDataByName["icon_512x512.png"]),
+        ("ic10", pngDataByName["icon_512x512@2x.png"])
+    ].compactMap { type, data in
+        data.map { (type, $0) }
+    },
+    to: icnsURL
+)
 
 try? fileManager.removeItem(at: iconsetURL)
 print("Generated \(icnsURL.path)")
@@ -69,31 +77,67 @@ private func renderDeployBarIcon(pixelSize: Int) throws -> Data {
     }
 
     let side = CGFloat(pixelSize)
+    let badgeColor = CGColor(red: 244.0 / 255.0, green: 250.0 / 255.0, blue: 246.0 / 255.0, alpha: 1)
     context.setAllowsAntialiasing(true)
     context.setShouldAntialias(true)
 
     context.clear(CGRect(x: 0, y: 0, width: side, height: side))
-    context.setFillColor(CGColor(gray: 0, alpha: 1))
-    context.fillEllipse(in: CGRect(
-        x: side * 0.148,
-        y: side * 0.148,
-        width: side * 0.704,
-        height: side * 0.704
-    ))
+    let statusColors = statusColorsTopToBottom()
 
-    context.setBlendMode(.clear)
-    context.setStrokeColor(CGColor(gray: 0, alpha: 1))
-    context.setLineWidth(side * 0.084)
+    let outerRect = CGRect(x: side * 0.109, y: side * 0.109, width: side * 0.781, height: side * 0.781)
+    let outerRadius = side * 0.191
+    context.saveGState()
+    context.addPath(roundedPath(in: outerRect, radius: outerRadius))
+    context.clip()
+    drawStatusStripes(in: outerRect, colors: statusColors, context: context)
+    context.restoreGState()
+
+    context.setStrokeColor(CGColor(red: 17.0 / 255.0, green: 24.0 / 255.0, blue: 20.0 / 255.0, alpha: 0.12))
+    context.setLineWidth(side * 0.008)
+    context.addPath(roundedPath(in: outerRect.insetBy(dx: side * 0.004, dy: side * 0.004), radius: outerRadius - side * 0.004))
+    context.strokePath()
+
+    let badgeDiameter = side * 0.586
+    let badgeRect = CGRect(
+        x: (side - badgeDiameter) / 2,
+        y: (side - badgeDiameter) / 2,
+        width: badgeDiameter,
+        height: badgeDiameter
+    )
+    context.setFillColor(badgeColor)
+    context.fillEllipse(in: badgeRect)
+
+    let markDiameter = side * 0.434
+    let markRect = CGRect(
+        x: (side - markDiameter) / 2,
+        y: (side - markDiameter) / 2,
+        width: markDiameter,
+        height: markDiameter
+    )
+
+    context.saveGState()
+    context.addEllipse(in: markRect)
+    context.clip()
+    context.setFillColor(CGColor(red: 17.0 / 255.0, green: 24.0 / 255.0, blue: 20.0 / 255.0, alpha: 1))
+    context.fillEllipse(in: markRect)
+    context.setStrokeColor(badgeColor)
+    context.setLineWidth(side * 0.072)
     context.setLineCap(.round)
     context.setLineJoin(.round)
+    let glyphRect = CGRect(
+        x: side * 0.31,
+        y: side * 0.31,
+        width: side * 0.38,
+        height: side * 0.38
+    )
     context.beginPath()
-    context.move(to: CGPoint(x: side * 0.295, y: side * 0.453))
-    context.addLine(to: CGPoint(x: side * 0.386, y: side * 0.592))
-    context.addLine(to: CGPoint(x: side * 0.477, y: side * 0.453))
-    context.addLine(to: CGPoint(x: side * 0.584, y: side * 0.617))
-    context.addLine(to: CGPoint(x: side * 0.715, y: side * 0.617))
+    context.move(to: glyphPoint(x: 0.08, y: 0.65, in: glyphRect))
+    context.addLine(to: glyphPoint(x: 0.29, y: 0.34, in: glyphRect))
+    context.addLine(to: glyphPoint(x: 0.50, y: 0.65, in: glyphRect))
+    context.addLine(to: glyphPoint(x: 0.74, y: 0.29, in: glyphRect))
+    context.addLine(to: glyphPoint(x: 0.92, y: 0.29, in: glyphRect))
     context.strokePath()
-    context.setBlendMode(.normal)
+    context.restoreGState()
 
     guard let image = context.makeImage() else {
         throw IconGenerationError.pngEncodingFailed
@@ -110,6 +154,60 @@ private func renderDeployBarIcon(pixelSize: Int) throws -> Data {
     }
 
     return pngData as Data
+}
+
+private func statusColorsTopToBottom() -> [CGColor] {
+    [
+        CGColor(red: 52.0 / 255.0, green: 199.0 / 255.0, blue: 89.0 / 255.0, alpha: 1),
+        CGColor(red: 0.0 / 255.0, green: 192.0 / 255.0, blue: 232.0 / 255.0, alpha: 1),
+        CGColor(red: 0.0 / 255.0, green: 136.0 / 255.0, blue: 255.0 / 255.0, alpha: 1),
+        CGColor(red: 255.0 / 255.0, green: 141.0 / 255.0, blue: 40.0 / 255.0, alpha: 1),
+        CGColor(red: 255.0 / 255.0, green: 56.0 / 255.0, blue: 60.0 / 255.0, alpha: 1)
+    ]
+}
+
+private func drawStatusStripes(in rect: CGRect, colors: [CGColor], context: CGContext) {
+    let stripeHeight = rect.height / CGFloat(colors.count)
+    for (index, color) in colors.enumerated() {
+        let y = rect.maxY - stripeHeight * CGFloat(index + 1)
+        context.setFillColor(color)
+        context.fill(CGRect(x: rect.minX, y: y, width: rect.width, height: stripeHeight))
+    }
+}
+
+private func roundedPath(in rect: CGRect, radius: CGFloat) -> CGPath {
+    CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+}
+
+private func glyphPoint(x: CGFloat, y: CGFloat, in rect: CGRect) -> CGPoint {
+    CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * (1 - y))
+}
+
+private func writeICNS(entries: [(type: String, data: Data)], to url: URL) throws {
+    var body = Data()
+    for entry in entries {
+        appendFourCC(entry.type, to: &body)
+        appendUInt32(UInt32(entry.data.count + 8), to: &body)
+        body.append(entry.data)
+    }
+
+    var file = Data()
+    appendFourCC("icns", to: &file)
+    appendUInt32(UInt32(body.count + 8), to: &file)
+    file.append(body)
+    try file.write(to: url, options: .atomic)
+}
+
+private func appendFourCC(_ value: String, to data: inout Data) {
+    precondition(value.utf8.count == 4)
+    data.append(contentsOf: value.utf8)
+}
+
+private func appendUInt32(_ value: UInt32, to data: inout Data) {
+    var bigEndian = value.bigEndian
+    withUnsafeBytes(of: &bigEndian) { bytes in
+        data.append(contentsOf: bytes)
+    }
 }
 
 private enum IconGenerationError: Error {

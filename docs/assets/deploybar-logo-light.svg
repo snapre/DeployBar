@@ -1,11 +1,25 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">DeployBar light logo</title>
-  <desc id="desc">A light DeployBar mark for dark backgrounds, with a deployment status path cut out of the center.</desc>
+  <desc id="desc">A rounded DeployBar app icon with five horizontal deployment status stripes and the original mark centered in a white circle.</desc>
   <defs>
-    <mask id="glyph-cutout">
-      <rect width="1024" height="1024" fill="white"/>
-      <path d="M302 560L395 418L488 560L598 392H732" stroke="black" stroke-width="86" stroke-linecap="round" stroke-linejoin="round"/>
-    </mask>
+    <clipPath id="outer-shape">
+      <rect x="112" y="112" width="800" height="800" rx="196"/>
+    </clipPath>
+    <clipPath id="inner-mark">
+      <circle cx="512" cy="512" r="222"/>
+    </clipPath>
   </defs>
-  <circle cx="512" cy="512" r="360" fill="#F4FAF6" mask="url(#glyph-cutout)"/>
+  <g clip-path="url(#outer-shape)">
+    <rect x="112" y="112" width="800" height="160" fill="#34C759"/>
+    <rect x="112" y="272" width="800" height="160" fill="#00C0E8"/>
+    <rect x="112" y="432" width="800" height="160" fill="#0088FF"/>
+    <rect x="112" y="592" width="800" height="160" fill="#FF8D28"/>
+    <rect x="112" y="752" width="800" height="160" fill="#FF383C"/>
+  </g>
+  <rect x="116" y="116" width="792" height="792" rx="192" stroke="#111814" stroke-opacity="0.12" stroke-width="8"/>
+  <circle cx="512" cy="512" r="300" fill="#F4FAF6"/>
+  <g clip-path="url(#inner-mark)">
+    <circle cx="512" cy="512" r="222" fill="#111814"/>
+    <path d="M349 570L430 450L512 570L605 430H675" stroke="#F4FAF6" stroke-width="74" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

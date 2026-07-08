@@ -10,3 +10,6 @@ dist/
 *.csr
 *.p12
 *.pem
+videos
+.claude
+Package.resolved
