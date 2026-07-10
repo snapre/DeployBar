@@ -9,6 +9,7 @@
       <circle cx="512" cy="512" r="222"/>
     </clipPath>
   </defs>
+  <g transform="translate(512 512) scale(1.28) translate(-512 -512)">
   <g clip-path="url(#outer-shape)">
     <rect x="112" y="112" width="800" height="160" fill="#34C759"/>
     <rect x="112" y="272" width="800" height="160" fill="#00C0E8"/>
@@ -21,5 +22,6 @@
   <g clip-path="url(#inner-mark)">
     <circle cx="512" cy="512" r="222" fill="#111814"/>
     <path d="M349 570L430 450L512 570L605 430H675" stroke="#F4FAF6" stroke-width="74" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
   </g>
 </svg>

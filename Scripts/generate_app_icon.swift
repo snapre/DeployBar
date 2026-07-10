@@ -82,6 +82,12 @@ private func renderDeployBarIcon(pixelSize: Int) throws -> Data {
     context.setShouldAntialias(true)
 
     context.clear(CGRect(x: 0, y: 0, width: side, height: side))
+    // Scale the complete mark as one unit so the app icon fills its canvas.
+    // This preserves the proportions between the stripes, badge, and glyph.
+    let artworkScale: CGFloat = 1.0 / 0.781
+    context.translateBy(x: side / 2, y: side / 2)
+    context.scaleBy(x: artworkScale, y: artworkScale)
+    context.translateBy(x: -side / 2, y: -side / 2)
     let statusColors = statusColorsTopToBottom()
 
     let outerRect = CGRect(x: side * 0.109, y: side * 0.109, width: side * 0.781, height: side * 0.781)

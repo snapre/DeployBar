@@ -63,6 +63,7 @@ struct AppLogoView: View {
             .frame(width: size * 0.43, height: size * 0.43)
             .compositingGroup()
         }
+        .scaleEffect(1.0 / 0.78)
     }
 
     private var statusStripes: some View {
