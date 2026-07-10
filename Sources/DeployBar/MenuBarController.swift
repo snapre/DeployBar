@@ -124,10 +124,19 @@ final class MenuBarController {
         if popover.isShown {
             popover.performClose(sender)
         } else {
-            applyPreferredPopoverSize(relativeTo: sender)
-            popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
-            NSApp.activate(ignoringOtherApps: true)
+            showPopover(relativeTo: sender)
         }
+    }
+
+    func showPopover() {
+        guard let button = statusItem.button else { return }
+        showPopover(relativeTo: button)
+    }
+
+    private func showPopover(relativeTo button: NSStatusBarButton) {
+        applyPreferredPopoverSize(relativeTo: button)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func applyPreferredPopoverSize(relativeTo button: NSStatusBarButton?) {

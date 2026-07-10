@@ -21,7 +21,9 @@ concurrency:
 jobs:
   release:
     name: Build and publish release
-    runs-on: macos-26
+    # Build and launch on the oldest supported GitHub macOS image so a release
+    # cannot accidentally depend on the macOS 26 SDK or runtime behavior.
+    runs-on: macos-15
 
     steps:
       - name: Checkout
@@ -114,6 +116,8 @@ jobs:
         run: |
           lipo .build/DeployBar.app/Contents/MacOS/DeployBar -verify_arch arm64 x86_64
           lipo -info .build/DeployBar.app/Contents/MacOS/DeployBar
+          test "$(vtool -show-build .build/DeployBar.app/Contents/MacOS/DeployBar | awk '$1 == "minos" { print $2 }' | sort -u)" = "13.0"
+          test "$(sips -g hasAlpha .build/DeployBar.app/Contents/Resources/DeployBar.icns | awk '/hasAlpha:/ { print $2 }')" = "yes"
           codesign --verify --deep --strict --verbose=2 .build/DeployBar.app
           codesign -dv --verbose=4 .build/DeployBar.app
           CERT_DIR="$(mktemp -d)"
@@ -200,6 +204,33 @@ jobs:
 
           ditto -c -k --keepParent .build/DeployBar.app "dist/DeployBar-${VERSION}-macOS.zip"
           shasum -a 256 "dist/DeployBar-${VERSION}-macOS.zip" > "dist/DeployBar-${VERSION}-macOS.zip.sha256"
+
+      - name: Verify final archive and launch
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          VERIFY_DIR="$(mktemp -d)"
+          ditto -x -k "dist/DeployBar-${VERSION}-macOS.zip" "$VERIFY_DIR"
+          APP="$VERIFY_DIR/DeployBar.app"
+
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          xcrun stapler validate "$APP"
+          spctl --assess --type execute --verbose=4 "$APP"
+          test "$(vtool -show-build "$APP/Contents/MacOS/DeployBar" | awk '$1 == "minos" { print $2 }' | sort -u)" = "13.0"
+          test "$(sips -g hasAlpha "$APP/Contents/Resources/DeployBar.icns" | awk '/hasAlpha:/ { print $2 }')" = "yes"
+
+          open -n "$APP"
+          for attempt in {1..20}; do
+            if pgrep -x DeployBar >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! pgrep -x DeployBar >/dev/null; then
+            /usr/bin/log show --last 2m --style compact --predicate 'process == "DeployBar"' || true
+            exit 1
+          fi
+          pkill -x DeployBar
 
       - name: Generate Sparkle appcast
         env:

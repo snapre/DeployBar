@@ -27,10 +27,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         store.prepareNotifications()
         store.start()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) { [weak self] in
+            self?.menuBarController?.showPopover()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        menuBarController?.showPopover()
+        return true
     }
 
 }

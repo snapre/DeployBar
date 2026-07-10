@@ -71,7 +71,7 @@ private func renderDeployBarIcon(pixelSize: Int) throws -> Data {
         bitsPerComponent: 8,
         bytesPerRow: 0,
         space: colorSpace,
-        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     ) else {
         throw IconGenerationError.missingGraphicsContext
     }
@@ -83,10 +83,10 @@ private func renderDeployBarIcon(pixelSize: Int) throws -> Data {
 
     let canvasRect = CGRect(x: 0, y: 0, width: side, height: side)
     let statusColors = statusColorsTopToBottom()
-    // macOS 26 places traditional icons with transparent corners on a smaller
-    // legacy-icon backplate. Keep the exported app-icon canvas fully opaque so
-    // the system can apply its own standard mask at the native icon size.
-    drawStatusStripes(in: canvasRect, colors: statusColors, context: context)
+    // Classic macOS releases display the pixels in an ICNS file directly.
+    // Preserve transparent corners and let each OS apply its native treatment;
+    // filling the complete canvas produces a square icon on macOS 13–15.
+    context.clear(canvasRect)
     // Scale the complete mark as one unit so the app icon fills its canvas.
     // This preserves the proportions between the stripes, badge, and glyph.
     let artworkScale: CGFloat = 1.0 / 0.781
