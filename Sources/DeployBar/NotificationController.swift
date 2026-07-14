@@ -76,7 +76,7 @@ struct NotificationController {
             guard let event = notificationEvent(oldStatus: oldStatuses[snapshot.id], snapshot: snapshot) else { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = "\(snapshot.projectName) \(event.titleSuffix)"
+            content.title = "\(notificationSubject(for: snapshot)) \(event.titleSuffix)"
             content.body = snapshot.errorMessage ?? detail(for: snapshot)
             content.sound = .default
 
@@ -120,6 +120,21 @@ struct NotificationController {
             return .started
         }
         return NotificationEvent(terminalStatus: snapshot.status)
+    }
+
+    private func notificationSubject(for snapshot: DeploymentSnapshot) -> String {
+        guard let rawServiceName = snapshot.serviceName else {
+            return snapshot.projectName
+        }
+
+        let serviceName = rawServiceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectName = snapshot.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !serviceName.isEmpty,
+              serviceName.caseInsensitiveCompare(projectName) != .orderedSame else {
+            return snapshot.projectName
+        }
+
+        return "\(snapshot.projectName) · \(serviceName)"
     }
 
     private func detail(for snapshot: DeploymentSnapshot) -> String {
