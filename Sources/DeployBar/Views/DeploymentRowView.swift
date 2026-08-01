@@ -67,17 +67,23 @@ struct DeploymentRowView: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(snapshot.projectName)
+            Text(title)
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
 
-            if let serviceName = snapshot.serviceName {
+            if snapshot.provider != .railway, let serviceName = snapshot.serviceName {
                 Text(serviceName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
+    }
+
+    private var title: String {
+        snapshot.provider == .railway
+            ? snapshot.projectAndServiceDisplayName
+            : snapshot.projectName
     }
 
     private var timingLine: some View {

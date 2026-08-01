@@ -123,18 +123,7 @@ struct NotificationController {
     }
 
     private func notificationSubject(for snapshot: DeploymentSnapshot) -> String {
-        guard let rawServiceName = snapshot.serviceName else {
-            return snapshot.projectName
-        }
-
-        let serviceName = rawServiceName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let projectName = snapshot.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !serviceName.isEmpty,
-              serviceName.caseInsensitiveCompare(projectName) != .orderedSame else {
-            return snapshot.projectName
-        }
-
-        return "\(snapshot.projectName) · \(serviceName)"
+        snapshot.projectAndServiceDisplayName
     }
 
     private func detail(for snapshot: DeploymentSnapshot) -> String {

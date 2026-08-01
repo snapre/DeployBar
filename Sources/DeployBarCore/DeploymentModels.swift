@@ -137,6 +137,21 @@ public struct DeploymentSnapshot: Identifiable, Codable, Equatable, Sendable {
         self.lastUpdatedAt = lastUpdatedAt
         self.isStale = isStale
     }
+
+    public var projectAndServiceDisplayName: String {
+        guard let rawServiceName = serviceName else {
+            return projectName
+        }
+
+        let normalizedProjectName = projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedServiceName = rawServiceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedServiceName.isEmpty,
+              normalizedServiceName.caseInsensitiveCompare(normalizedProjectName) != .orderedSame else {
+            return projectName
+        }
+
+        return "\(projectName) · \(normalizedServiceName)"
+    }
 }
 
 public enum ProviderFailureKind: String, Codable, Equatable, Sendable {
