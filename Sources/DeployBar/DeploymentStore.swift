@@ -20,7 +20,7 @@ final class DeploymentStore: ObservableObject {
     private let notificationController = NotificationController()
     private var refreshTask: Task<Void, Never>?
     private var schedulerTask: Task<Void, Never>?
-    private var previousStatuses: [String: DeploymentStatus] = [:]
+    private var previousNotificationState = DeploymentNotificationState()
     private var consecutiveFailureCount = 0
     private var pendingRefresh = false
     private var automaticRefreshSuspensionReasons: Set<AutomaticRefreshSuspensionReason> = []
@@ -350,12 +350,16 @@ final class DeploymentStore: ObservableObject {
     }
 
     private func apply(result: ProviderRefreshResult, manual _: Bool) {
-        let oldStatuses = previousStatuses
+        let oldNotificationState = previousNotificationState
+        let notificationCandidates = oldNotificationState.candidates(from: result.snapshots)
         snapshots = result.snapshots
         issues = result.issues
         consecutiveFailureCount = result.issues.isEmpty ? 0 : min(consecutiveFailureCount + 1, 6)
-        previousStatuses = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.id, $0.status) })
-        notificationController.notifyTransitions(oldStatuses: oldStatuses, snapshots: snapshots)
+        previousNotificationState = DeploymentNotificationState(snapshots: snapshots)
+        notificationController.notifyTransitions(
+            oldStatuses: oldNotificationState.statusesByID,
+            snapshots: notificationCandidates
+        )
     }
 
     private func nextSchedulerDelay(defaultInterval: TimeInterval) -> TimeInterval {

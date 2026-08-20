@@ -5,7 +5,7 @@ public enum DeploymentSnapshotFocus {
         var snapshotsByTarget: [String: DeploymentSnapshot] = [:]
 
         for snapshot in snapshots {
-            let key = focusKey(for: snapshot)
+            let key = scopeKey(for: snapshot)
             guard let existing = snapshotsByTarget[key] else {
                 snapshotsByTarget[key] = snapshot
                 continue
@@ -26,7 +26,7 @@ public enum DeploymentSnapshotFocus {
             }
     }
 
-    private static func focusKey(for snapshot: DeploymentSnapshot) -> String {
+    public static func scopeKey(for snapshot: DeploymentSnapshot) -> String {
         if snapshot.provider == .railway {
             return [
                 snapshot.provider.rawValue,
