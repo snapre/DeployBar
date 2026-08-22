@@ -1,0 +1,42 @@
+name: Check Homebrew Tap Token
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify read and write access
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Homebrew tap token
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "HOMEBREW_TAP_TOKEN is not configured." >&2
+            exit 1
+          fi
+
+          TAP_REPO="snapre/homebrew-tap"
+          TEST_BRANCH="deploybar-token-check-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          MAIN_SHA="$(gh api "repos/${TAP_REPO}/git/ref/heads/main" --jq '.object.sha')"
+
+          cleanup() {
+            gh api --method DELETE "repos/${TAP_REPO}/git/refs/heads/${TEST_BRANCH}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          gh api --method POST "repos/${TAP_REPO}/git/refs" \
+            -f ref="refs/heads/${TEST_BRANCH}" \
+            -f sha="$MAIN_SHA" \
+            --silent
+
+          gh api "repos/${TAP_REPO}/git/ref/heads/${TEST_BRANCH}" --silent
+          gh api --method DELETE "repos/${TAP_REPO}/git/refs/heads/${TEST_BRANCH}" --silent
+          trap - EXIT
+
+          echo "HOMEBREW_TAP_TOKEN can read and write ${TAP_REPO}."
