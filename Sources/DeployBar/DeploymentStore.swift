@@ -104,7 +104,7 @@ final class DeploymentStore: ObservableObject {
         do {
             try tokenStore.save(token: token, for: account)
             updateSettings { settings in
-                settings.accounts.append(account)
+                settings.addAccount(account)
             }
             refresh(manual: true)
         } catch {

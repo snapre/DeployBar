@@ -14,6 +14,13 @@ public struct DeployBarSettings: Codable, Equatable, Sendable {
         self.accounts = accounts
         self.showMockProvider = showMockProvider
     }
+
+    public mutating func addAccount(_ account: ProviderAccount) {
+        accounts.append(account)
+        if account.provider != .mock {
+            showMockProvider = false
+        }
+    }
 }
 
 public final class SettingsStore: @unchecked Sendable {
