@@ -7,6 +7,7 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case netlify
     case render
     case cloudflarePages
+    case cloudflareWorkers
     case digitalOcean
     case heroku
     case flyio
@@ -23,6 +24,7 @@ public enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .netlify: "Netlify"
         case .render: "Render"
         case .cloudflarePages: "Cloudflare Pages"
+        case .cloudflareWorkers: "Cloudflare Workers"
         case .digitalOcean: "DigitalOcean"
         case .heroku: "Heroku"
         case .flyio: "Fly.io"

@@ -19,7 +19,7 @@ brew install --cask snapre/tap/deploybar
 - Replace the deployment-dashboard checking loop with one menu bar snapshot.
 - See active, waiting, failed, and healthy deployments in a native popover.
 - Let macOS notify you when a deploy starts, ships, fails, cancels, or is removed.
-- Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
+- Keep provider breadth as an implementation detail: Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments are normalized into the same status model.
 - Run it locally. Tokens stay in Keychain, and non-secret settings stay on your Mac.
 
 The project is intentionally native: Swift 6, Swift Package Manager, SwiftUI for popover/settings surfaces, and AppKit `NSStatusItem` for menu bar integration.
@@ -44,7 +44,7 @@ The launch build currently contains:
 - mock provider with queued/building/ready/failed snapshots
 - Vercel REST provider for deployment listing and project/environment discovery
 - Railway GraphQL provider for deployment listing and read-only discovery of projects, services, and environments
-- Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub deployments, and GitLab deployments providers
+- Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub deployments, and GitLab deployments providers
 - refresh scheduling with stale snapshot retention, issue backoff, and faster polling while deployments are live
 - macOS notifications for deployment start, ready/success, failed/error/crashed, canceled, or removed states
 - tests for status mapping, response parsing, provider requests and discovery, redaction, monitored target matching, and refresh behavior
@@ -144,6 +144,12 @@ When no target is configured, DeployBar lists accessible services and polls rece
 Data source: Cloudflare API v4, `GET /client/v4/accounts/{account_id}/pages/projects` and `GET /pages/projects/{project_name}/deployments`.
 
 Cloudflare Pages requires the account ID in addition to the API token. When no target is configured, DeployBar lists Pages projects for that account and polls recent deployments for each project.
+
+### Cloudflare Workers
+
+Data sources: Cloudflare API v4, `GET /client/v4/accounts/{account_id}/workers/scripts`, `GET /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/builds`, and `GET /client/v4/accounts/{account_id}/workers/scripts/{worker_name}/deployments`.
+
+Cloudflare Workers requires the account ID plus a user API token with Workers Scripts Read, Workers CI Read, and Memberships Read. DeployBar uses Workers Builds history when available so queued, running, failed, canceled, and successful builds retain branch and commit metadata. Workers without Builds fall back to active deployment history, including direct Wrangler deployments.
 
 ### DigitalOcean App Platform
 

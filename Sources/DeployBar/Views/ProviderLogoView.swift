@@ -65,7 +65,7 @@ struct ProviderLogoView: View {
             Image(systemName: "rectangle.3.group.fill")
                 .font(.system(size: size * 0.56, weight: .semibold))
                 .foregroundStyle(foregroundColor)
-        case .cloudflarePages:
+        case .cloudflarePages, .cloudflareWorkers:
             Image(systemName: "cloud.fill")
                 .font(.system(size: size * 0.58, weight: .semibold))
                 .foregroundStyle(foregroundColor)
@@ -104,7 +104,7 @@ struct ProviderLogoView: View {
             return Color(red: 0.00, green: 0.68, blue: 0.62)
         case .render:
             return Color(red: 0.27, green: 0.89, blue: 0.72)
-        case .cloudflarePages:
+        case .cloudflarePages, .cloudflareWorkers:
             return Color(red: 0.95, green: 0.50, blue: 0.13)
         case .digitalOcean:
             return Color(red: 0.00, green: 0.50, blue: 1.00)
@@ -123,7 +123,7 @@ struct ProviderLogoView: View {
         switch provider {
         case .mock:
             return .secondary
-        case .vercel, .railway, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .flyio, .gitlab:
+        case .vercel, .railway, .netlify, .render, .cloudflarePages, .cloudflareWorkers, .digitalOcean, .heroku, .flyio, .gitlab:
             return .white
         case .github:
             return colorScheme == .dark ? .primary : .white
@@ -175,6 +175,8 @@ private extension ProviderID {
             return "render"
         case .cloudflarePages:
             return "cloudflare-pages"
+        case .cloudflareWorkers:
+            return "cloudflare-workers"
         case .digitalOcean:
             return "digital-ocean"
         case .heroku:

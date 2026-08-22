@@ -141,7 +141,7 @@ public extension ProviderID {
                 scopes: ["repo_deployment"],
                 responseType: .code
             )
-        case .mock, .render, .cloudflarePages, .flyio:
+        case .mock, .render, .cloudflarePages, .cloudflareWorkers, .flyio:
             return nil
         }
     }

@@ -238,6 +238,13 @@ public extension ProviderID {
                 emptyTargetName: "All Pages projects",
                 fallbackNames: [.project: "All projects", .environment: "All environments", .branch: "All branches"]
             )
+        case .cloudflareWorkers:
+            ProviderTargetBehavior(
+                displayFields: [.project, .branch],
+                matchFields: [.project, .branch],
+                emptyTargetName: "All Workers",
+                fallbackNames: [.project: "All Workers", .branch: "All branches"]
+            )
         case .digitalOcean:
             ProviderTargetBehavior(
                 displayFields: [.project, .service, .environment],

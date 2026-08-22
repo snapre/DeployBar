@@ -59,6 +59,7 @@ final class DeploymentStore: ObservableObject {
             NetlifyProvider(),
             RenderProvider(),
             CloudflarePagesProvider(),
+            CloudflareWorkersProvider(),
             DigitalOceanProvider(),
             HerokuProvider(),
             FlyProvider(),
@@ -179,8 +180,17 @@ final class DeploymentStore: ObservableObject {
         await RailwayProvider().discoverResources(token: token, tokenKind: tokenKind)
     }
 
-    func discoverCloudflareAccounts(token: String) async -> ProviderScopeDiscoveryResult {
-        await CloudflarePagesProvider().discoverAccounts(token: token)
+    func discoverCloudflareAccounts(token: String, provider: ProviderID) async -> ProviderScopeDiscoveryResult {
+        switch provider {
+        case .cloudflarePages:
+            return await CloudflarePagesProvider().discoverAccounts(token: token)
+        case .cloudflareWorkers:
+            return await CloudflareWorkersProvider().discoverAccounts(token: token)
+        default:
+            return ProviderScopeDiscoveryResult(
+                issues: [ProviderIssue(provider: provider, kind: .notConfigured, message: "Cloudflare account discovery is not available for \(provider.displayName).")]
+            )
+        }
     }
 
     func discoverProviderTargets(
@@ -255,6 +265,8 @@ final class DeploymentStore: ObservableObject {
             return await RenderProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .cloudflarePages:
             return await CloudflarePagesProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
+        case .cloudflareWorkers:
+            return await CloudflareWorkersProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .digitalOcean:
             return await DigitalOceanProvider().discoverTargets(token: token, account: account).deduplicated(for: provider)
         case .heroku:

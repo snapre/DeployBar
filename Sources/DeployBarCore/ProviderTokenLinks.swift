@@ -57,6 +57,12 @@ public extension ProviderID {
                 url: cloudflarePagesTokenURL(),
                 help: "Open Cloudflare with Pages Read and Memberships Read already selected."
             )
+        case .cloudflareWorkers:
+            return tokenLink(
+                title: "Create Workers Token",
+                url: cloudflareWorkersTokenURL(),
+                help: "Open Cloudflare with Workers Scripts Read, Workers CI Read, and Memberships Read already selected."
+            )
         case .digitalOcean:
             return tokenLink(
                 title: "Get Token",
@@ -107,6 +113,17 @@ public extension ProviderID {
             URLQueryItem(name: "accountId", value: "*"),
             URLQueryItem(name: "zoneId", value: "all"),
             URLQueryItem(name: "name", value: "DeployBar Pages Read")
+        ]
+        return components?.url
+    }
+
+    private func cloudflareWorkersTokenURL() -> URL? {
+        var components = URLComponents(string: "https://dash.cloudflare.com/profile/api-tokens")
+        components?.queryItems = [
+            URLQueryItem(name: "permissionGroupKeys", value: #"[{"key":"workers_scripts","type":"read"},{"key":"workers_ci","type":"read"},{"key":"memberships","type":"read"}]"#),
+            URLQueryItem(name: "accountId", value: "*"),
+            URLQueryItem(name: "zoneId", value: "all"),
+            URLQueryItem(name: "name", value: "DeployBar Workers Read")
         ]
         return components?.url
     }

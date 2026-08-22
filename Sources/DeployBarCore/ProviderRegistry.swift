@@ -86,6 +86,16 @@ public struct ProviderRegistry: Sendable {
             dashboardURL: URL(string: "https://dash.cloudflare.com")
         ),
         ProviderDescriptor(
+            id: .cloudflareWorkers,
+            displayName: "Cloudflare Workers",
+            defaultEnabled: false,
+            requiresToken: true,
+            supportsTeamScope: true,
+            supportsMonitoredTargets: true,
+            requiresMonitoredTargets: false,
+            dashboardURL: URL(string: "https://dash.cloudflare.com")
+        ),
+        ProviderDescriptor(
             id: .digitalOcean,
             displayName: "DigitalOcean",
             defaultEnabled: false,
@@ -144,6 +154,7 @@ public struct ProviderRegistry: Sendable {
         .netlify,
         .render,
         .cloudflarePages,
+        .cloudflareWorkers,
         .digitalOcean,
         .heroku,
         .flyio,

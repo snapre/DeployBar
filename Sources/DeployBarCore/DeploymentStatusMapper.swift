@@ -92,6 +92,31 @@ public enum DeploymentStatusMapper {
         }
     }
 
+    public static func cloudflareWorkersBuildStatus(_ rawStatus: String?, outcome rawOutcome: String?) -> DeploymentStatus {
+        switch normalized(rawStatus ?? "") {
+        case "queued":
+            return .queued
+        case "initializing":
+            return .initializing
+        case "running":
+            return .building
+        case "stopped":
+            break
+        default:
+            if rawOutcome == nil {
+                return .unknown
+            }
+        }
+
+        return switch normalized(rawOutcome ?? "") {
+        case "success": .success
+        case "fail", "failed": .failed
+        case "skipped": .skipped
+        case "cancelled", "canceled", "terminated": .canceled
+        default: .unknown
+        }
+    }
+
     public static func digitalOceanStatus(_ rawValue: String) -> DeploymentStatus {
         switch normalized(rawValue) {
         case "pending", "queued": .queued

@@ -343,6 +343,79 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(snapshots[0].commitSha, "da113c7")
     }
 
+    func testCloudflareWorkersBuildParsing() throws {
+        let json = """
+        {
+          "success": true,
+          "result": [
+            {
+              "build_uuid": "build_123",
+              "build_outcome": "success",
+              "status": "stopped",
+              "created_on": "2026-08-22T10:00:00Z",
+              "initializing_on": "2026-08-22T10:00:05Z",
+              "running_on": "2026-08-22T10:00:10Z",
+              "stopped_on": "2026-08-22T10:01:10Z",
+              "modified_on": "2026-08-22T10:01:10Z",
+              "build_trigger_metadata": {
+                "author": "dev@example.com",
+                "branch": "main",
+                "commit_hash": "abc123",
+                "commit_message": "Ship Worker"
+              }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let account = ProviderAccount(provider: .cloudflareWorkers, displayName: "Cloudflare Workers", tokenReference: "token")
+        let target = MonitoredTarget(projectID: "tag_123", projectName: "edge-api")
+        let snapshots = try CloudflareWorkersParser.buildSnapshots(from: json, account: account, target: target, now: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(snapshots.count, 1)
+        XCTAssertEqual(snapshots[0].id, "cloudflareWorkers:\(account.id):build:build_123")
+        XCTAssertEqual(snapshots[0].projectName, "edge-api")
+        XCTAssertEqual(snapshots[0].status, .success)
+        XCTAssertEqual(snapshots[0].branch, "main")
+        XCTAssertEqual(snapshots[0].commitSha, "abc123")
+        XCTAssertEqual(snapshots[0].commitMessage, "Ship Worker")
+        XCTAssertEqual(snapshots[0].actor, "dev@example.com")
+        XCTAssertEqual(snapshots[0].duration, 60)
+    }
+
+    func testCloudflareWorkersDirectDeploymentParsing() throws {
+        let json = """
+        {
+          "success": true,
+          "result": {
+            "deployments": [
+              {
+                "id": "deployment_123",
+                "created_on": "2026-08-22T10:00:00Z",
+                "source": "wrangler",
+                "author_email": "dev@example.com",
+                "annotations": {
+                  "workers/message": "Deploy from Wrangler",
+                  "workers/triggered_by": "upload"
+                }
+              }
+            ]
+          }
+        }
+        """.data(using: .utf8)!
+
+        let account = ProviderAccount(provider: .cloudflareWorkers, displayName: "Cloudflare Workers", tokenReference: "token")
+        let target = MonitoredTarget(projectName: "edge-api")
+        let snapshots = try CloudflareWorkersParser.deploymentSnapshots(from: json, account: account, target: target, now: Date(timeIntervalSince1970: 1))
+
+        XCTAssertEqual(snapshots.count, 1)
+        XCTAssertEqual(snapshots[0].id, "cloudflareWorkers:\(account.id):deployment:deployment_123")
+        XCTAssertEqual(snapshots[0].status, .success)
+        XCTAssertEqual(snapshots[0].environmentName, "Production")
+        XCTAssertEqual(snapshots[0].commitMessage, "Deploy from Wrangler")
+        XCTAssertEqual(snapshots[0].actor, "dev@example.com")
+    }
+
     func testDigitalOceanDeploymentParsing() throws {
         let json = """
         {

@@ -56,6 +56,14 @@ final class DeploymentStatusMapperTests: XCTestCase {
         XCTAssertEqual(DeploymentStatusMapper.cloudflarePagesStatus("active"), .building)
         XCTAssertEqual(DeploymentStatusMapper.cloudflarePagesStatus("failure"), .failed)
 
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("queued", outcome: nil), .queued)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("initializing", outcome: nil), .initializing)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("running", outcome: nil), .building)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("stopped", outcome: "success"), .success)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("stopped", outcome: "fail"), .failed)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("stopped", outcome: "cancelled"), .canceled)
+        XCTAssertEqual(DeploymentStatusMapper.cloudflareWorkersBuildStatus("stopped", outcome: "terminated"), .canceled)
+
         XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("ACTIVE"), .success)
         XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("BUILDING"), .building)
         XCTAssertEqual(DeploymentStatusMapper.digitalOceanStatus("ERROR"), .failed)

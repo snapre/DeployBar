@@ -13,7 +13,7 @@ Reference checked:
 
 Recommended angle:
 
-DeployBar is a native, local-first Mac menu bar app for the moment after you hit deploy. It replaces the habit of checking Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab dashboards with one quiet status popover and macOS notifications.
+DeployBar is a native, local-first Mac menu bar app for the moment after you hit deploy. It replaces the habit of checking Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab dashboards with one quiet status popover and macOS notifications.
 
 Primary audience:
 
@@ -81,7 +81,7 @@ Local-first deploy status for your Mac menu bar
 Description:
 
 ```text
-DeployBar is a free, open-source macOS menu bar app that watches deployments across Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab. It keeps status in one native popover, sends macOS alerts when builds ship or fail, and stores provider tokens in Keychain with no DeployBar backend.
+DeployBar is a free, open-source macOS menu bar app that watches deployments across Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab. It keeps status in one native popover, sends macOS alerts when builds ship or fail, and stores provider tokens in Keychain with no DeployBar backend.
 ```
 
 Pricing:
@@ -135,7 +135,7 @@ Hey Product Hunt,
 
 I built DeployBar for the small but persistent loop that happens after shipping: you deploy something, then keep checking a handful of provider dashboards until it either ships or fails.
 
-DeployBar turns that into one native Mac menu bar status. The first public release supports Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments. It shows a compact popover, normalizes provider states into one status model, and sends macOS notifications when a deployment becomes ready, fails, cancels, or disappears.
+DeployBar turns that into one native Mac menu bar status. The first public release supports Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments. It shows a compact popover, normalizes provider states into one status model, and sends macOS notifications when a deployment becomes ready, fails, cancels, or disappears.
 
 The trust model matters to me: DeployBar is free and open source, built in Swift, and local-first. Provider tokens stay in macOS Keychain. Non-secret settings stay on your Mac. There is no DeployBar backend service and no hosted credential sync.
 
@@ -250,7 +250,7 @@ Pre-launch:
 ```text
 I am launching DeployBar on Product Hunt soon.
 
-It is a free, open-source Mac menu bar app for watching cloud deployments across Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab.
+It is a free, open-source Mac menu bar app for watching cloud deployments across Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab.
 
 The goal is simple: hit deploy, glance once, get back to work.
 
@@ -266,7 +266,7 @@ It is a native, local-first Mac menu bar app that turns deployment status across
 
 Free, open source, Swift, tokens in Keychain, no backend.
 
-I would love feedback from anyone shipping across Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, or GitLab:
+I would love feedback from anyone shipping across Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, or GitLab:
 
 [PRODUCT HUNT LINK]
 ```
@@ -280,7 +280,7 @@ DeployBar is live on Product Hunt:
 
 [PRODUCT HUNT LINK]
 
-Native Mac menu bar deployment status for Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab.
+Native Mac menu bar deployment status for Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab.
 
 Feedback welcome on provider coverage and the local-first trust model.
 ```
@@ -292,7 +292,7 @@ LinkedIn:
 ```text
 I just launched DeployBar on Product Hunt.
 
-DeployBar is a free, open-source macOS menu bar app for monitoring deployment status across Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments.
+DeployBar is a free, open-source macOS menu bar app for monitoring deployment status across Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments.
 
 The product is intentionally small and native: Swift, SwiftUI, AppKit menu bar integration, provider tokens in Keychain, local settings, and no DeployBar backend.
 
@@ -370,7 +370,7 @@ The product is meant to live in the menu bar all day, so I wanted it to feel lik
 Why these providers:
 
 ```text
-I started with the providers I most often see in split-stack indie and small-team projects: Vercel, Railway, Netlify, Render, Cloudflare Pages, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab. The next question is depth: better diagnostics, failure context, and provider-specific setup polish.
+I started with the providers I most often see in split-stack indie and small-team projects: Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab. The next question is depth: better diagnostics, failure context, and provider-specific setup polish.
 ```
 
 Windows/Linux:

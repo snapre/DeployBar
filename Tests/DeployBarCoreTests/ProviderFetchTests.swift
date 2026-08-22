@@ -473,6 +473,149 @@ final class ProviderFetchTests: XCTestCase {
         XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/pages/projects")
     }
 
+    func testCloudflareWorkersProviderRequiresAccountID() async {
+        let provider = CloudflareWorkersProvider(client: RecordingHTTPClient(responses: []))
+        let account = ProviderAccount(provider: .cloudflareWorkers, displayName: "Cloudflare Workers", tokenReference: "token")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+
+        XCTAssertEqual(result.snapshots, [])
+        XCTAssertEqual(result.issues.first?.kind, .notConfigured)
+    }
+
+    func testCloudflareWorkersProviderListsWorkersAndBuildsWhenNoTargetsConfigured() async throws {
+        let workersBody = """
+        {
+          "success": true,
+          "result": [
+            { "id": "edge-api", "tag": "tag_123" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let buildsBody = """
+        {
+          "success": true,
+          "result": [
+            {
+              "build_uuid": "build_123",
+              "build_outcome": "success",
+              "status": "stopped",
+              "created_on": "2026-08-22T10:00:00Z",
+              "running_on": "2026-08-22T10:00:10Z",
+              "stopped_on": "2026-08-22T10:01:10Z",
+              "build_trigger_metadata": {
+                "branch": "main",
+                "commit_hash": "abc123"
+              }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: workersBody),
+            HTTPResponse(statusCode: 200, data: buildsBody)
+        ])
+        let provider = CloudflareWorkersProvider(client: client, limit: 2, workerLimit: 5)
+        let account = ProviderAccount(provider: .cloudflareWorkers, displayName: "Cloudflare Workers", tokenReference: "token", teamID: "acct_123")
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+        let requests = await client.requests
+        let buildsComponents = URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)
+        let buildsQuery = Dictionary(uniqueKeysWithValues: (buildsComponents?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].status, .success)
+        XCTAssertEqual(result.snapshots[0].projectName, "edge-api")
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer cloudflare_secret")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/workers/scripts")
+        XCTAssertEqual(buildsComponents?.path, "/client/v4/accounts/acct_123/builds/workers/tag_123/builds")
+        XCTAssertEqual(buildsQuery["page"], "1")
+        XCTAssertEqual(buildsQuery["per_page"], "2")
+    }
+
+    func testCloudflareWorkersProviderFallsBackToDirectDeploymentsWithoutBuilds() async throws {
+        let buildsBody = """
+        { "success": true, "result": [] }
+        """.data(using: .utf8)!
+        let deploymentsBody = """
+        {
+          "success": true,
+          "result": {
+            "deployments": [
+              {
+                "id": "deployment_123",
+                "created_on": "2026-08-22T10:00:00Z",
+                "author_email": "dev@example.com",
+                "annotations": { "workers/message": "Wrangler deploy" }
+              }
+            ]
+          }
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: buildsBody),
+            HTTPResponse(statusCode: 200, data: deploymentsBody)
+        ])
+        let provider = CloudflareWorkersProvider(client: client)
+        let account = ProviderAccount(
+            provider: .cloudflareWorkers,
+            displayName: "Cloudflare Workers",
+            tokenReference: "token",
+            teamID: "acct_123",
+            monitoredTargets: [MonitoredTarget(projectID: "tag_123", projectName: "edge-api")]
+        )
+
+        let result = await provider.fetchDeployments(context: ProviderContext(account: account, token: "cloudflare_secret"))
+        let requests = await client.requests
+
+        XCTAssertEqual(result.issues, [])
+        XCTAssertEqual(result.snapshots.count, 1)
+        XCTAssertEqual(result.snapshots[0].id, "cloudflareWorkers:\(account.id):deployment:deployment_123")
+        XCTAssertEqual(result.snapshots[0].commitMessage, "Wrangler deploy")
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/builds/workers/tag_123/builds")
+        XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/workers/scripts/edge-api/deployments")
+    }
+
+    func testCloudflareWorkersDiscoveryListsAccountsAndWorkers() async throws {
+        let accountsBody = """
+        {
+          "success": true,
+          "result": [
+            { "account": { "id": "acct_123", "name": "Acme" } }
+          ]
+        }
+        """.data(using: .utf8)!
+        let workersBody = """
+        {
+          "success": true,
+          "result": [
+            { "id": "edge-api", "tag": "tag_123" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = RecordingHTTPClient(responses: [
+            HTTPResponse(statusCode: 200, data: accountsBody),
+            HTTPResponse(statusCode: 200, data: workersBody)
+        ])
+        let provider = CloudflareWorkersProvider(client: client, workerLimit: 5)
+
+        let accountResult = await provider.discoverAccounts(token: "cloudflare_secret")
+        let targetAccount = ProviderAccount(provider: .cloudflareWorkers, displayName: "Cloudflare Workers", tokenReference: "token", teamID: "acct_123")
+        let targetResult = await provider.discoverTargets(token: "cloudflare_secret", account: targetAccount)
+        let requests = await client.requests
+
+        XCTAssertEqual(accountResult.issues, [])
+        XCTAssertEqual(accountResult.scopes.first?.id, "acct_123")
+        XCTAssertEqual(accountResult.scopes.first?.name, "Acme")
+        XCTAssertEqual(targetResult.issues, [])
+        XCTAssertEqual(targetResult.targets.first?.projectID, "tag_123")
+        XCTAssertEqual(targetResult.targets.first?.projectName, "edge-api")
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(URLComponents(url: requests[0].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/memberships")
+        XCTAssertEqual(URLComponents(url: requests[1].url!, resolvingAgainstBaseURL: false)?.path, "/client/v4/accounts/acct_123/workers/scripts")
+    }
+
     func testGitHubProviderFetchesLatestDeploymentStatus() async throws {
         let deploymentsBody = """
         [

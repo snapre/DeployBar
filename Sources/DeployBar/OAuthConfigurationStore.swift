@@ -58,6 +58,8 @@ struct OAuthConfigurationStore {
             return "DIGITALOCEAN"
         case .cloudflarePages:
             return "CLOUDFLAREPAGES"
+        case .cloudflareWorkers:
+            return "CLOUDFLAREWORKERS"
         default:
             return provider.rawValue.uppercased()
         }

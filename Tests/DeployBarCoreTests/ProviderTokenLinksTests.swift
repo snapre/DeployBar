@@ -52,6 +52,21 @@ final class ProviderTokenLinksTests: XCTestCase {
         XCTAssertEqual(query["name"], "DeployBar Pages Read")
     }
 
+    func testCloudflareWorkersTokenLinkPrefillsReadPermissions() throws {
+        let link = try XCTUnwrap(ProviderID.cloudflareWorkers.tokenLink())
+        let components = try XCTUnwrap(URLComponents(url: link.url, resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+
+        XCTAssertEqual(link.title, "Create Workers Token")
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "dash.cloudflare.com")
+        XCTAssertEqual(components.path, "/profile/api-tokens")
+        XCTAssertEqual(query["permissionGroupKeys"], #"[{"key":"workers_scripts","type":"read"},{"key":"workers_ci","type":"read"},{"key":"memberships","type":"read"}]"#)
+        XCTAssertEqual(query["accountId"], "*")
+        XCTAssertEqual(query["zoneId"], "all")
+        XCTAssertEqual(query["name"], "DeployBar Workers Read")
+    }
+
     func testProviderTokenLinksCoverTokenProviders() {
         let providers: [ProviderID] = [
             .vercel,
@@ -59,6 +74,7 @@ final class ProviderTokenLinksTests: XCTestCase {
             .netlify,
             .render,
             .cloudflarePages,
+            .cloudflareWorkers,
             .digitalOcean,
             .heroku,
             .github,

@@ -133,7 +133,7 @@ struct AddProviderTokenView: View {
                 }
                 smartDiscoveryFields
             }
-        } else if provider == .cloudflarePages {
+        } else if isCloudflareProvider {
             VStack(alignment: .leading, spacing: 8) {
                 if !discoveredScopes.isEmpty {
                     Picker("Account", selection: $teamID) {
@@ -359,7 +359,7 @@ struct AddProviderTokenView: View {
     }
 
     private var providerScopeIsValid: Bool {
-        provider != .cloudflarePages || teamID.nilIfEmpty != nil
+        !isCloudflareProvider || teamID.nilIfEmpty != nil
     }
 
     private var requiredTargetIsValid: Bool {
@@ -397,12 +397,18 @@ struct AddProviderTokenView: View {
         if provider == .cloudflarePages {
             return "Paste & Find Pages"
         }
+        if provider == .cloudflareWorkers {
+            return "Paste & Find Workers"
+        }
         return canDiscoverAfterPaste ? "Paste & Discover" : "Paste Token"
     }
 
     private var pasteTokenButtonHelp: String {
         if provider == .cloudflarePages {
             return "Paste a Cloudflare token from the clipboard and find accounts and Pages projects."
+        }
+        if provider == .cloudflareWorkers {
+            return "Paste a Cloudflare token from the clipboard and find accounts and Workers."
         }
         return canDiscoverAfterPaste
             ? "Paste a token from the clipboard and immediately discover available resources."
@@ -423,7 +429,7 @@ struct AddProviderTokenView: View {
 
     private var supportsSmartDiscovery: Bool {
         switch provider {
-        case .vercel, .netlify, .render, .cloudflarePages, .digitalOcean, .heroku, .flyio, .github, .gitlab:
+        case .vercel, .netlify, .render, .cloudflarePages, .cloudflareWorkers, .digitalOcean, .heroku, .flyio, .github, .gitlab:
             true
         case .mock, .railway:
             false
@@ -432,8 +438,8 @@ struct AddProviderTokenView: View {
 
     private var smartDiscoveryHint: String {
         if isDiscoveringProvider {
-            return provider == .cloudflarePages && teamID.nilIfEmpty == nil
-                ? "Finding Cloudflare accounts and Pages projects."
+            return isCloudflareProvider && teamID.nilIfEmpty == nil
+                ? "Finding Cloudflare accounts and \(provider == .cloudflarePages ? "Pages projects" : "Workers")."
                 : "Finding projects, apps, and services."
         }
         if !discoveredTargets.isEmpty {
@@ -443,13 +449,18 @@ struct AddProviderTokenView: View {
             }
             return "Found \(discoveredTargets.count) \(noun). Leave blank to watch all, or choose a filter."
         }
-        if provider == .cloudflarePages, !discoveredScopes.isEmpty {
+        if isCloudflareProvider, !discoveredScopes.isEmpty {
             return "Found \(discoveredScopes.count) account\(discoveredScopes.count == 1 ? "" : "s"). Run discovery again after changing accounts."
         }
         if provider == .cloudflarePages {
             return teamID.nilIfEmpty == nil
                 ? "Paste a Pages Read + Memberships Read token to find accounts and projects."
                 : "List Pages projects for this account."
+        }
+        if provider == .cloudflareWorkers {
+            return teamID.nilIfEmpty == nil
+                ? "Paste a Workers Scripts Read + Workers CI Read + Memberships Read token to find accounts and Workers."
+                : "List Workers for this account."
         }
         return "Validate the token and list available resources."
     }
@@ -517,8 +528,8 @@ struct AddProviderTokenView: View {
         if token.nilIfEmpty == nil {
             return "API token is required."
         }
-        if provider == .cloudflarePages, teamID.nilIfEmpty == nil {
-            return "Cloudflare Pages requires an account ID."
+        if isCloudflareProvider, teamID.nilIfEmpty == nil {
+            return "\(provider.displayName) requires an account ID."
         }
         if !provider.targetBehavior.requiredFields.isEmpty {
             return "\(provider.displayName) needs an initial target."
@@ -667,8 +678,8 @@ struct AddProviderTokenView: View {
         isDiscoveringProvider = true
         validationMessage = nil
 
-        if provider == .cloudflarePages, teamID.nilIfEmpty == nil {
-            let accountResult = await store.discoverCloudflareAccounts(token: token)
+        if isCloudflareProvider, teamID.nilIfEmpty == nil {
+            let accountResult = await store.discoverCloudflareAccounts(token: token, provider: provider)
             if let issue = accountResult.issues.first {
                 validationMessage = issue.message
                 discoveredScopes = []
@@ -682,7 +693,7 @@ struct AddProviderTokenView: View {
                 teamID = firstScope.id
                 showsCloudflareManualAccountID = false
             } else {
-                validationMessage = "No Cloudflare accounts were found. Create a Pages token with Memberships Read, or enter the account ID manually."
+                validationMessage = "No Cloudflare accounts were found. Create a \(provider.displayName) token with Memberships Read, or enter the account ID manually."
                 discoveredTargets = []
                 isDiscoveringProvider = false
                 return
@@ -727,6 +738,10 @@ struct AddProviderTokenView: View {
         environmentID = target.environmentID ?? ""
         environmentName = target.environmentName ?? ""
         branch = target.branch ?? ""
+    }
+
+    private var isCloudflareProvider: Bool {
+        provider == .cloudflarePages || provider == .cloudflareWorkers
     }
 
     private func applyFirstRailwaySelection() {
