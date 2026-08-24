@@ -1,0 +1,49 @@
+# DeployBar
+
+> DeployBar is a free, open-source, local-first macOS menu bar app for monitoring cloud deployment status.
+
+Canonical website: https://deploy.bar/
+Source code: https://github.com/snapre/DeployBar
+Latest release: https://github.com/snapre/DeployBar/releases/latest
+License: MIT
+
+## What DeployBar does
+
+DeployBar replaces repeatedly checking cloud deployment dashboards with one native macOS menu bar status. It sends native notifications when a deployment starts, succeeds, fails, cancels, or disappears.
+
+## Supported deployment providers
+
+- Vercel
+- Railway
+- Netlify
+- Render
+- Cloudflare Pages
+- Cloudflare Workers
+- DigitalOcean App Platform
+- Heroku
+- Fly.io
+- GitHub Deployments
+- GitLab Deployments
+
+## Installation
+
+Install the signed and Apple-notarized Homebrew Cask:
+
+`brew install --cask snapre/tap/deploybar`
+
+DeployBar requires macOS 13 or later.
+
+## Privacy and architecture
+
+- Provider API tokens stay in macOS Keychain.
+- Non-secret settings stay in local JSON under Application Support.
+- DeployBar has no backend account, telemetry, or hosted credential sync.
+- The app is native Swift 6 with SwiftUI and AppKit, not Electron.
+- DeployBar is free and open source under the MIT License.
+
+## Primary sources
+
+- Product and provider documentation: https://github.com/snapre/DeployBar/blob/main/README.md
+- Privacy policy: https://github.com/snapre/DeployBar/blob/main/PRIVACY.md
+- Security policy: https://github.com/snapre/DeployBar/blob/main/SECURITY.md
+- Releases: https://github.com/snapre/DeployBar/releases

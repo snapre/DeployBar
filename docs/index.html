@@ -3,15 +3,151 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta
       name="description"
-      content="DeployBar replaces the deployment-dashboard checking loop with one local-first macOS menu bar status. Install the signed public launch build with Homebrew."
+      content="DeployBar is a free, open-source macOS deployment monitor for Vercel, Railway, Netlify, Cloudflare, Heroku, GitHub, GitLab, and more in your menu bar."
     >
     <meta name="theme-color" content="#f5f7f0">
-    <title>DeployBar - stop checking deployment dashboards</title>
+    <title>macOS Deployment Monitor for Your Menu Bar | DeployBar</title>
+    <link rel="canonical" href="https://deploy.bar/">
+    <link rel="sitemap" type="application/xml" href="https://deploy.bar/sitemap.xml">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="DeployBar">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="macOS Deployment Monitor for Your Menu Bar | DeployBar">
+    <meta property="og:description" content="Monitor deployments across Vercel, Railway, Netlify, Cloudflare, Heroku, GitHub, GitLab, and more from one native macOS menu bar app.">
+    <meta property="og:url" content="https://deploy.bar/">
+    <meta property="og:image" content="https://deploy.bar/assets/deploybar-index-first-screen.png">
+    <meta property="og:image:width" content="1440">
+    <meta property="og:image:height" content="1000">
+    <meta property="og:image:alt" content="DeployBar monitoring cloud deployments from the macOS menu bar">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="macOS Deployment Monitor for Your Menu Bar | DeployBar">
+    <meta name="twitter:description" content="Monitor cloud deployments and get native status alerts without keeping provider dashboards open.">
+    <meta name="twitter:image" content="https://deploy.bar/assets/deploybar-index-first-screen.png">
+    <meta name="twitter:image:alt" content="DeployBar monitoring cloud deployments from the macOS menu bar">
     <link rel="icon" type="image/svg+xml" href="assets/deploybar-logo-dark.svg" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/svg+xml" href="assets/deploybar-logo-light.svg" media="(prefers-color-scheme: dark)">
     <link rel="icon" href="assets/deploybar-icon.png">
+    <link rel="preload" as="image" href="assets/macos-desktop-wallpaper.jpg" type="image/jpeg" fetchpriority="high">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://deploy.bar/#website",
+            "url": "https://deploy.bar/",
+            "name": "DeployBar",
+            "description": "A free, open-source macOS menu bar app for monitoring cloud deployment status.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://deploy.bar/#organization" },
+            "about": { "@id": "https://deploy.bar/#software" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://deploy.bar/#organization",
+            "name": "DeployBar",
+            "url": "https://deploy.bar/",
+            "logo": "https://deploy.bar/assets/deploybar-icon.png",
+            "sameAs": [
+              "https://github.com/snapre/DeployBar",
+              "https://www.producthunt.com/products/deploybar"
+            ]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://deploy.bar/#software",
+            "name": "DeployBar",
+            "url": "https://deploy.bar/",
+            "description": "DeployBar monitors cloud deployments from the macOS menu bar and sends native alerts when a deployment starts, succeeds, fails, cancels, or disappears.",
+            "applicationCategory": "DeveloperApplication",
+            "applicationSubCategory": "Deployment monitoring",
+            "operatingSystem": "macOS 13 or later",
+            "isAccessibleForFree": true,
+            "image": "https://deploy.bar/assets/deploybar-index-first-screen.png",
+            "downloadUrl": "https://github.com/snapre/DeployBar/releases/latest",
+            "codeRepository": "https://github.com/snapre/DeployBar",
+            "license": "https://github.com/snapre/DeployBar/blob/main/LICENSE",
+            "publisher": { "@id": "https://deploy.bar/#organization" },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "url": "https://github.com/snapre/DeployBar/releases/latest"
+            },
+            "featureList": [
+              "Vercel deployment monitoring",
+              "Railway deployment monitoring",
+              "Netlify deployment monitoring",
+              "Render deployment monitoring",
+              "Cloudflare Pages and Workers deployment monitoring",
+              "DigitalOcean App Platform deployment monitoring",
+              "Heroku and Fly.io release monitoring",
+              "GitHub and GitLab deployment monitoring",
+              "Native macOS deployment notifications",
+              "Local Keychain credential storage"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://deploy.bar/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is DeployBar?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "DeployBar is a native macOS 13+ menu bar app that monitors cloud deployment status and sends alerts when deployments start, succeed, fail, cancel, or disappear."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which deployment providers does DeployBar monitor?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "DeployBar monitors Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can DeployBar monitor multiple deployment providers at once?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. DeployBar normalizes deployments from multiple configured providers and accounts into one menu bar status and one compact popover."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Where does DeployBar store provider API tokens?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Provider tokens stay in the macOS Keychain. Non-secret settings stay in a local JSON file, and DeployBar has no hosted credential sync."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is DeployBar free and open source?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. DeployBar is free and open source under the MIT License, with its source code available on GitHub."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I install DeployBar on macOS?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Install the signed and notarized app with Homebrew using brew install --cask snapre/tap/deploybar, or download the latest release from GitHub."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <script>
       (() => {
         const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -366,8 +502,8 @@
       h1 {
         margin-bottom: 22px;
         font-family: "Iowan Old Style", Georgia, serif;
-        font-size: 4.6rem;
-        line-height: 0.98;
+        font-size: clamp(3.15rem, 4.25vw, 4.2rem);
+        line-height: 1.01;
         letter-spacing: 0;
       }
 
@@ -860,7 +996,13 @@
         align-items: start;
       }
 
+      .build-panel > * {
+        min-width: 0;
+      }
+
       .command-box {
+        min-width: 0;
+        max-width: 100%;
         border: 1px solid var(--terminal-border);
         border-radius: 8px;
         background: var(--terminal-bg);
@@ -893,6 +1035,7 @@
       }
 
       pre {
+        max-width: 100%;
         margin: 0;
         padding: 18px;
         overflow-x: auto;
@@ -917,6 +1060,30 @@
         background: var(--surface);
       }
 
+      .faq-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .faq-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+        background: var(--surface);
+      }
+
+      .faq-item h3 {
+        margin-bottom: 8px;
+        font-size: 1.02rem;
+      }
+
+      .faq-item p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
       .site-footer {
         border-top: 1px solid var(--line);
         padding: 30px 0 44px;
@@ -934,6 +1101,7 @@
 
       .footer-links {
         display: flex;
+        flex-wrap: wrap;
         gap: 14px;
       }
 
@@ -944,6 +1112,7 @@
       .hero > div:first-child,
       .provider,
       .feature,
+      .faq-item,
       .command-box,
       .privacy-list li {
         animation: content-rise 620ms both cubic-bezier(0.2, 0.72, 0.18, 1);
@@ -1147,6 +1316,7 @@
 
         .provider-grid,
         .feature-grid,
+        .faq-grid,
         .build-panel {
           grid-template-columns: 1fr;
         }
@@ -1516,6 +1686,7 @@
             <a href="#install">Install</a>
             <a href="#providers">Providers</a>
             <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
             <a href="#build">Build</a>
             <a href="https://github.com/snapre/DeployBar">Source</a>
           </div>
@@ -1536,10 +1707,10 @@
                 <circle class="menu-status-dot" cx="20.5" cy="12.5" r="2.5"></circle>
               </svg>
             </span>
-            <img class="system-status-icon battery" src="assets/menu-battery.png" alt="">
-            <img class="system-status-icon wifi" src="assets/menu-wifi.png" alt="">
-            <img class="system-status-icon spotlight" src="assets/menu-spotlight.png" alt="">
-            <img class="system-status-icon control-center" src="assets/menu-control-center.png" alt="">
+            <img class="system-status-icon battery" src="assets/menu-battery.png" alt="" width="82" height="60">
+            <img class="system-status-icon wifi" src="assets/menu-wifi.png" alt="" width="84" height="60">
+            <img class="system-status-icon spotlight" src="assets/menu-spotlight.png" alt="" width="74" height="60">
+            <img class="system-status-icon control-center" src="assets/menu-control-center.png" alt="" width="80" height="60">
             <time data-menu-clock>Fri May 22 11:28 PM</time>
           </div>
         </div>
@@ -1549,10 +1720,10 @@
     <main id="top">
       <section class="site-shell hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <div class="eyebrow">First public launch - local-first Mac app</div>
-          <h1 id="hero-title">DeployBar</h1>
+          <div class="eyebrow">DeployBar &middot; free and open-source</div>
+          <h1 id="hero-title">Deployment monitoring for your Mac menu bar.</h1>
           <p class="lead">
-            Hit deploy and get back to work. DeployBar watches the deployment dashboards you used to keep open and turns them into one quiet macOS menu bar status, with native alerts when a build starts, ships, fails, cancels, or disappears.
+            DeployBar monitors Vercel, Railway, Netlify, Render, Cloudflare, DigitalOcean, Heroku, Fly.io, GitHub, and GitLab from one native macOS app, with alerts when a deployment starts, succeeds, fails, cancels, or disappears.
           </p>
           <div class="actions">
             <a class="button primary" href="#install">Install with Homebrew</a>
@@ -1578,7 +1749,7 @@
             </span>
           </button>
           <a class="producthunt-badge" href="https://www.producthunt.com/products/deploybar?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-deploybar" target="_blank" rel="noopener noreferrer" aria-label="Find DeployBar on Product Hunt">
-            <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1159783&amp;theme=light&amp;t=1780306741230" alt="DeployBar - Monitor cloud deploys from your Mac menu bar | Product Hunt" width="250" height="54">
+            <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1159783&amp;theme=light&amp;t=1780306741230" alt="DeployBar - Monitor cloud deploys from your Mac menu bar | Product Hunt" width="250" height="54" loading="lazy" decoding="async">
           </a>
           <p class="meta">Free and open source &middot; signed and notarized &middot; Homebrew Cask &middot; no DeployBar backend</p>
         </div>
@@ -1594,6 +1765,8 @@
                     alt="DeployBar popover preview with mocked Vercel, Railway, and GitHub deployment rows."
                     width="840"
                     height="1572"
+                    decoding="async"
+                    fetchpriority="high"
                   >
                 </picture>
                 <picture class="product-screenshot">
@@ -1603,6 +1776,8 @@
                     alt="DeployBar popover preview with mocked Netlify, Render, and Cloudflare Pages deployment rows."
                     width="840"
                     height="1572"
+                    loading="lazy"
+                    decoding="async"
                   >
                 </picture>
                 <picture class="product-screenshot">
@@ -1612,6 +1787,8 @@
                     alt="DeployBar popover preview with mocked DigitalOcean, Heroku, and GitLab deployment rows."
                     width="840"
                     height="1572"
+                    loading="lazy"
+                    decoding="async"
                   >
                 </picture>
                 <div class="product-carousel-dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -1623,9 +1800,9 @@
 
       <section id="providers" class="site-shell" aria-labelledby="providers-title">
         <div class="section-heading">
-          <h2 id="providers-title">One place for the dashboards you used to check.</h2>
+          <h2 id="providers-title">Monitor Vercel, Railway, Netlify, and more in one menu bar.</h2>
           <p>
-            For the first public release, provider coverage is broad enough for real split-stack projects. The point is not the logo count; it is that every provider is normalized into the same clean snapshot so you can stop bouncing between tabs.
+            Track deployment status across eleven cloud and source-control providers. Every provider is normalized into the same clean snapshot so you can stop bouncing between dashboards and focus on the deploys that need attention.
           </p>
         </div>
         <div class="provider-grid">
@@ -1712,7 +1889,7 @@
       <section id="features" class="feature-band" aria-labelledby="features-title">
         <div class="site-shell">
           <div class="section-heading">
-            <h2 id="features-title">Built for the quiet after deploy.</h2>
+            <h2 id="features-title">A native macOS deployment monitor, built to stay quiet.</h2>
             <p>
               Keep the deploy loop visible without making it your main task. DeployBar stays native, local, and small enough for repeated shipping days.
             </p>
@@ -1742,7 +1919,7 @@
         <div class="build-panel">
           <div>
             <div class="section-heading">
-              <h2 id="install-title">Install from Homebrew.</h2>
+              <h2 id="install-title">Install DeployBar with Homebrew.</h2>
               <p>
                 The recommended launch install is the signed and notarized Homebrew Cask. You can also download the release zip directly from GitHub.
               </p>
@@ -1768,11 +1945,46 @@ open https://github.com/snapre/DeployBar/releases/latest</code></pre>
         </div>
       </section>
 
+      <section id="faq" class="feature-band" aria-labelledby="faq-title">
+        <div class="site-shell">
+          <div class="section-heading">
+            <h2 id="faq-title">DeployBar questions, answered.</h2>
+            <p>Quick facts about supported deployment providers, installation, privacy, and how the macOS menu bar monitor works.</p>
+          </div>
+          <div class="faq-grid">
+            <article class="faq-item">
+              <h3>What is DeployBar?</h3>
+              <p>DeployBar is a native macOS 13+ menu bar app that monitors cloud deployment status and sends alerts when deployments start, succeed, fail, cancel, or disappear.</p>
+            </article>
+            <article class="faq-item">
+              <h3>Which deployment providers does DeployBar monitor?</h3>
+              <p>Vercel, Railway, Netlify, Render, Cloudflare Pages, Cloudflare Workers, DigitalOcean App Platform, Heroku, Fly.io, GitHub Deployments, and GitLab Deployments.</p>
+            </article>
+            <article class="faq-item">
+              <h3>Can DeployBar monitor multiple deployment providers at once?</h3>
+              <p>Yes. DeployBar normalizes deployments from multiple configured providers and accounts into one menu bar status and one compact popover.</p>
+            </article>
+            <article class="faq-item">
+              <h3>Where does DeployBar store provider API tokens?</h3>
+              <p>Provider tokens stay in macOS Keychain. Non-secret settings stay in a local JSON file, and DeployBar has no hosted credential sync.</p>
+            </article>
+            <article class="faq-item">
+              <h3>Is DeployBar free and open source?</h3>
+              <p>Yes. DeployBar is free and open source under the MIT License, with its complete source code available on GitHub.</p>
+            </article>
+            <article class="faq-item">
+              <h3>How do I install DeployBar on macOS?</h3>
+              <p>Install the signed and notarized app with <code>brew install --cask snapre/tap/deploybar</code>, or download the latest release from GitHub.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section id="build" class="site-shell" aria-labelledby="build-title">
         <div class="build-panel">
           <div>
             <div class="section-heading">
-              <h2 id="build-title">Local-first by design.</h2>
+              <h2 id="build-title">Local-first deployment monitoring by design.</h2>
               <p>
                 DeployBar is a Swift Package with a native SwiftUI and AppKit shell. No Electron runtime, no backend account, no telemetry, and no hosted credential sync.
               </p>
@@ -1802,6 +2014,8 @@ open .build/DeployBar.app</code></pre>
         <div class="footer-links">
           <a href="https://github.com/snapre/DeployBar">GitHub</a>
           <a href="https://github.com/snapre/DeployBar/blob/main/LICENSE">MIT License</a>
+          <a href="https://github.com/snapre/DeployBar/blob/main/PRIVACY.md">Privacy</a>
+          <a href="https://github.com/snapre/DeployBar/blob/main/SECURITY.md">Security</a>
           <a href="https://github.com/steipete/CodexBar">CodexBar</a>
           <a href="https://github.com/simple-icons/simple-icons">Simple Icons</a>
           <a href="https://github.com/snapre/DeployBar/blob/main/README.md">Docs</a>
